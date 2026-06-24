@@ -192,7 +192,8 @@ The same agents, different providers, different cost / quality / speed.
 
 - Groq `llama-3.3-70b-versatile` (primary), Gemini Flash, OpenRouter `:free`
 - Single rich `analyst` LLM call per scanner decision
-- ~90 decisions/min with `KeyPool` rotation across 3 free keys
+- `KeyPool` rotates keys within a provider; `LLMRouter` fails over across
+  providers with per-model RPM/RPD/TPM/TPD throttle (free-tier presets included)
 - $0/month, suitable for development and early production
 
 ### Phase 2 — Paid
@@ -227,9 +228,11 @@ the subscription (Free / Basic / Pro / Max). No per-token billing for users.
 zetryn-trading/
 ├── zetryn/              ← the agent library (installable; only this ships in wheel)
 │   ├── core/            ← graph engine: State, Node, Edge, Graph, Command
-│   ├── llm/             ← LLMClient, OpenAICompatibleClient, KeyPool, LLMNode
+│   ├── llm/             ← LLMClient, OpenAICompatibleClient, KeyPool, LLMNode,
+│   │                       LLMRouter (multi-provider failover + throttle)
+│   ├── knowledge/       ← KnowledgePack (markdown + JSON playbook loader)
 │   ├── tools/           ← Tool, ToolRegistry
-│   ├── memory/          ← MemoryStore, Blacklist, DecisionLog
+│   ├── memory/          ← MemoryStore, Blacklist, DecisionLog, ReflectiveNode
 │   ├── observability/   ← structured logging, hooks, trace serialization
 │   ├── auth/            ← SubscriptionAuth, License (Zetryn platform seam)
 │   └── backtest/        ← generic Backtester
@@ -312,6 +315,10 @@ What's built:
 - ✅ Sniper with `rule` / `llm` / `hybrid` / `hybrid_audit` modes (M9)
 - ✅ Schema enrichment for memecoin signals (M7)
 - ✅ Packaging + docs (M10)
+- ✅ Pre-P1 foundations: `KnowledgePack` (playbook loader), `LLMRouter`
+  (multi-provider failover + per-model throttle), `ReflectiveNode`
+  (loss-pattern extractor from `DecisionLog`) — see
+  [docs/CAPABILITIES.md](docs/CAPABILITIES.md)
 
 What's in progress / not yet ready:
 
@@ -343,6 +350,8 @@ No API key required. Tests use offline stubs + `MockDataProvider`.
 
 ## Documentation
 
+- [Capabilities & Gap Analysis](docs/CAPABILITIES.md) —
+  matrix of what works today, links to source modules, F1–F3 status
 - [Design (2026-06-23)](docs/plans/2026-06-23-zetryn-agent-framework-design.md) —
   original architecture
 - [AI-First Pivot (2026-06-24)](docs/plans/2026-06-24-ai-first-pivot.md) —

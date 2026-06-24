@@ -2,6 +2,7 @@
 
 from .blacklist import Blacklist
 from .decision_log import DecisionLog
+from .reflective import Pattern, ReflectionResult, ReflectiveNode, reflect
 from .store import InMemoryStore, JSONFileStore, MemoryStore
 
 __all__ = [
@@ -10,4 +11,8 @@ __all__ = [
     "InMemoryStore",
     "JSONFileStore",
     "MemoryStore",
+    "Pattern",
+    "ReflectionResult",
+    "ReflectiveNode",
+    "reflect",
 ]

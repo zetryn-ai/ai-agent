@@ -28,6 +28,7 @@ class RateLimit:
     tpm: int | None = None  # tokens per minute
     rpm: int | None = None  # requests per minute
     rpd: int | None = None  # requests per day
+    tpd: int | None = None  # tokens per day (some providers like Groq enforce this)
 
 
 # Plan presets. NUMBERS ARE PLACEHOLDERS — the platform is the source of truth.

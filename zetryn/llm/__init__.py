@@ -11,6 +11,12 @@ from .config import (
 from .keypool import KeyPool
 from .node import LLMDecisionNode, LLMNode
 from .openai_compat import OpenAICompatibleClient
+from .router import (
+    PROVIDER_FREE_TIER_LIMITS,
+    LLMRouter,
+    RouterEntry,
+    get_free_tier_limit,
+)
 from .structured import structured_complete
 from .types import (
     LLMError,
@@ -31,6 +37,7 @@ __all__ = [
     "GROQ_BASE_URL",
     "OPENAI_BASE_URL",
     "OPENROUTER_BASE_URL",
+    "PROVIDER_FREE_TIER_LIMITS",
     "ZETRYN_API_BASE",
     "ZETRYN_MODELS",
     "KeyPool",
@@ -40,14 +47,17 @@ __all__ = [
     "LLMNode",
     "LLMRateLimitError",
     "LLMResult",
+    "LLMRouter",
     "LLMTimeoutError",
     "Message",
     "NoKeysAvailableError",
     "OpenAICompatibleClient",
     "ProviderConfig",
+    "RouterEntry",
     "StructuredOutputError",
     "ZetrynClient",
     "assistant",
+    "get_free_tier_limit",
     "structured_complete",
     "system",
     "user",
