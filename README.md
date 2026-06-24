@@ -1,0 +1,331 @@
+# Zetryn Agent Framework
+
+**AI Agent Trading from Zetryn AI.**
+
+A Python framework for building AI agents that decide on Solana memecoin trades.
+You bring the bot, the wallet, and the RPC; Zetryn provides the **agent** — a
+graph of LLM analysts and hard-rule guardrails that turns raw token data into
+structured, auditable trading decisions.
+
+```
+BOT (yours)                   ZETRYN (this framework)
+─────────────                 ─────────────────────────────────────
+gather token data  ──push──>  safety_gate → intel_gate → market_gate
+                                                  │
+                                         ┌────────┘
+                                         ▼
+                              ai analyst (LLM): safety / market /
+                                         wallets / social verdict
+                                                  │
+                                         guardrail (sanity check)
+                                                  │
+                                                  ▼
+                                       Decision { action, confidence,
+                                                  analysis, reasons }
+                                                  │
+execute (or not) <───────────────────────────────┘
+```
+
+The framework **decides**; the bot **executes**. Zetryn never holds your
+private key and never touches the chain.
+
+---
+
+## Why AI-first?
+
+Most "trading bots" are spreadsheets with extra steps: thresholds, weighted
+formulas, hardcoded heuristics. They work — until rug techniques evolve, or a
+qualitative signal (Twitter mention velocity, KOL pattern, bonding curve regime)
+matters more than your formula captured.
+
+Zetryn's reference agents put an **LLM as the primary analyst**:
+
+- **Hard gates** instantly reject obvious junk (honeypot, mint authority active,
+  dev rug history, bundle attacks, dead liquidity). Sub-millisecond. No LLM call
+  burned on rugs.
+- **AI analyst** (one rich LLM call) evaluates survivors across four dimensions —
+  safety, market, wallets, social — returning a structured `FullAnalysis` with
+  per-aspect verdict + reasoning + final recommendation.
+- **Guardrail** rules sanity-check the LLM's output. They can demote a verdict
+  but never promote — hard reality (liquidity floor, sniper density) always wins
+  over a hallucinated bullish call.
+
+Result: decisions you can **audit**, **debug**, and **explain** — not just a
+score from nowhere.
+
+---
+
+## Two agents, four sniper modes
+
+### Agent A — Scanner
+
+Slow path for "should we buy this?" Takes 1–3s, fully LLM-driven analysis.
+Returns `Decision` with the full per-aspect `FullAnalysis` attached.
+
+```python
+from strategies import build_scanner
+from trading import ScannerConfig, TradingContext
+from zetryn.core import State
+from zetryn.llm import OpenAICompatibleClient, ProviderConfig, GROQ_BASE_URL
+
+# 1. Pick an LLM provider (free tier: Groq / Gemini / OpenRouter)
+provider = ProviderConfig(
+    name="groq",
+    base_url=GROQ_BASE_URL,
+    model="llama-3.3-70b-versatile",
+    key_envs=["GROQ_API_KEY_1", "GROQ_API_KEY_2", "GROQ_API_KEY_3"],
+)
+llm = OpenAICompatibleClient(provider)
+
+# 2. Build the agent
+scanner = build_scanner(llm, model="llama-3.3-70b-versatile")
+
+# 3. Run it — bot pushes a fully-formed TokenInput
+state = await scanner.run(State(context=TradingContext(token=token_input)))
+decision = state.output
+
+print(decision.action)        # "alert" | "watch" | "skip"
+print(decision.confidence)    # 0..1
+print(decision.analysis)      # FullAnalysis with per-aspect verdicts
+```
+
+### Agent B — Sniper
+
+Fast path for "BUY NOW or skip." Four modes, picked via `SniperConfig.decision_mode`:
+
+| Mode | Latency | LLM in hot path? | When to use |
+|---|---|---|---|
+| `rule` (default) | < 1 ms | No | Production sniper, ultra-fresh launches |
+| `llm` | 200-500 ms | Yes (decides) | Tokens older than 1 minute, LLM-driven entry |
+| `hybrid` | 200-500 ms | Yes + rule guardrail | LLM decides, rules veto rug / cap size |
+| `hybrid_audit` | **< 1 ms decision + async AI verify** | Async (non-blocking) | **Best of both worlds** |
+
+**`hybrid_audit`** is the AI-meets-speed bridge: the rule path decides instantly,
+then a background coroutine runs the LLM to second-opinion that decision. Result
+is stored in `state.scratch["audit_task"]`, ready to be written to `DecisionLog`
+for offline analysis (where do rule and AI disagree? what does that mean for
+tuning?). The bot trades immediately on the rule decision — no LLM in the hot
+path.
+
+```python
+from strategies import build_sniper
+sniper = build_sniper(llm)  # llm only used for audit / llm / hybrid modes
+
+state = await sniper.run(State(context=TradingContext(
+    token=token, config=SniperConfig(decision_mode="hybrid_audit"),
+)))
+
+# Decision returned in <1 ms — trade now.
+bot.execute(state.output)
+
+# Then await the audit verdict (no rush).
+verdict = await state.scratch["audit_task"]
+await decision_log.log(state.run_id, {
+    **state.output.model_dump(),
+    "audit": verdict.model_dump(),
+})
+```
+
+---
+
+## Install
+
+```bash
+pip install zetryn-trading
+```
+
+Or from source:
+
+```bash
+git clone https://github.com/zetryn-ai/zetryn-trading
+cd zetryn-trading
+pip install -e ".[dev]"
+```
+
+Then copy the example env file and add at least one provider key (free):
+
+```bash
+cp .env.example .env
+# fill GROQ_API_KEY_1=... (free at https://console.groq.com)
+```
+
+---
+
+## See it work, no API key needed
+
+```bash
+cd examples
+python walkthrough.py
+```
+
+Runs the scanner on 16 dummy memecoin scenarios — gem, rug, bundle attack,
+smart-money entry, pumpfun near-graduation, sell pressure — and prints, for
+each:
+
+1. **INPUT** — the signals the bot pushed in
+2. **PROCESSING** — which gate stopped it, or the full analyst pipeline
+3. **ANALYSIS** — per-aspect AI verdict with signals + reasoning
+4. **OUTPUT** — the `Decision` returned to the bot
+
+Uses a heuristic stub LLM so you can see the shape of the output without
+spending a token. With a real Groq key, the reasoning is dramatically richer.
+
+---
+
+## Three-phase LLM evolution
+
+The same agents, different providers, different cost / quality / speed.
+
+### Phase 1 — Free (today)
+
+- Groq `llama-3.3-70b-versatile` (primary), Gemini Flash, OpenRouter `:free`
+- Single rich `analyst` LLM call per scanner decision
+- ~90 decisions/min with `KeyPool` rotation across 3 free keys
+- $0/month, suitable for development and early production
+
+### Phase 2 — Paid
+
+- OpenAI (GPT-4o, OpenAI-compatible), Anthropic Claude (native adapter, soon)
+- Optionally split `analyst` into parallel specialist nodes (safety / market /
+  wallets / social) for richer reasoning
+- $0.001–$0.02 per decision, scales to thousands/min
+
+### Phase 3 — Zetryn models
+
+When the Zetryn platform goes live (workstream P1–P4):
+
+| Node | Model | Why |
+|---|---|---|
+| `safety_analyst` | **Easfus** | Fast pattern matching on contracts |
+| `market_analyst` | **Easfus** | Numeric reasoning, low latency |
+| `wallets_analyst` | **Medifus** | Wallet behavior context, balanced |
+| `social_analyst` | **Medifus** | NLP sentiment + KOL quality |
+| `synthesizer` | **Hardes** | Deep cross-aspect reasoning |
+
+Zetryn models are fine-tuned for memecoin trading specifically and bundled into
+the subscription (Free / Basic / Pro / Max). No per-token billing for users.
+
+**Code structure does not change across phases.** Only `ProviderConfig` does.
+
+---
+
+## Architecture
+
+```
+zetryn-trading/
+├── zetryn/              ← the framework (installable; only this ships in wheel)
+│   ├── core/            ← graph engine: State, Node, Edge, Graph, Command
+│   ├── llm/             ← LLMClient, OpenAICompatibleClient, KeyPool, LLMNode
+│   ├── tools/           ← Tool, ToolRegistry
+│   ├── memory/          ← MemoryStore, Blacklist, DecisionLog
+│   ├── observability/   ← structured logging, hooks, trace serialization
+│   ├── auth/            ← SubscriptionAuth, License (Zetryn platform seam)
+│   └── backtest/        ← generic Backtester
+├── trading/             ← shared contract (TokenInput, Decision, FullAnalysis, ...)
+└── strategies/          ← reference agents (move to your bot repo for production)
+    ├── nodes/           ← analyst.py, decide.py, filters.py, sniper_nodes.py
+    └── agents/          ← scanner.py, sniper.py
+```
+
+**Dependency rule (strict):**
+- `zetryn/` imports nothing from `trading/` or `strategies/`
+- `trading/` imports nothing
+- `strategies/` imports both
+
+So you can `import zetryn` in your own bot and bring your own `trading`-shaped
+schemas if your domain isn't Solana memecoins.
+
+---
+
+## Push vs pull
+
+The framework supports both data-ingress patterns:
+
+- **Push** (recommended for production): bot fetches data, builds `TokenInput`,
+  calls `agent.run(State(context=TradingContext(token=token_input)))`. Latency
+  predictable, no surprise external calls.
+- **Pull**: implement the `DataProvider` protocol, agent calls `provider.fetch(mint)`.
+  Useful for backtests with `HistoricalDataProvider`.
+
+Test, backtest, and live are the same graph — only the provider changes.
+
+---
+
+## Pre-filter at the bot
+
+The framework is cheap to run, but **filling `TokenInput` is not** — Helius,
+GMGN, Twitter, DexScreener all cost API quota. Pre-filter at the bot:
+
+```python
+def worth_fetching(ws_event) -> bool:
+    return (
+        ws_event.liquidity_usd >= 3_000
+        and 30 <= ws_event.age_seconds <= 3600
+        and ws_event.mint not in blacklist
+        and ws_event.creator not in known_ruggers
+    )
+```
+
+10,000 tokens/min from a pumpfun WS → ~50 candidates/min after pre-filter → fully
+enriched and pushed to the agent. The agent's job is the **last mile**, not
+discovery.
+
+---
+
+## What the framework owns vs what the bot owns
+
+| Framework | Bot |
+|---|---|
+| Graph orchestration | RPC, wallet, signing |
+| LLM calls (advisor / analyst / decider) | Hot loop, mempool watching |
+| Scoring, decision aggregation | Trade execution, slippage, MEV |
+| Memory (blacklist, decision log) | Position tracking, PnL |
+| Observability (trace, hooks) | Pre-filter, fetch budgeting |
+| Backtest harness | Live market data feeds |
+
+Boundary is non-negotiable: **framework decides, bot executes.** Never the
+reverse.
+
+---
+
+## Status
+
+- ✅ Core engine, LLM layer, tools, memory, observability, auth seam, backtest
+- ✅ Scanner v2 (AI-first, M8)
+- ✅ Sniper with `rule` / `llm` / `hybrid` / `hybrid_audit` modes (M9)
+- ✅ Schema enrichment for memecoin signals (M7)
+- 🚧 Zetryn platform (RemoteSubscriptionAuth, hosted vLLM, billing)
+- 📅 YAML strategy loader, multi-agent panel, vector memory (later)
+
+---
+
+## Tests
+
+```bash
+pytest                            # all
+pytest tests/test_scanner.py      # scanner
+pytest tests/test_sniper.py -v    # sniper, verbose
+```
+
+No API key required. Tests use offline stubs + `MockDataProvider`.
+
+---
+
+## Documentation
+
+- [Design (2026-06-23)](docs/plans/2026-06-23-zetryn-agent-framework-design.md) —
+  original architecture
+- [AI-First Pivot (2026-06-24)](docs/plans/2026-06-24-ai-first-pivot.md) —
+  current architecture, 3-phase LLM evolution, sniper `hybrid_audit`
+- [CHANGELOG](CHANGELOG.md)
+
+---
+
+## License
+
+MIT. Use it, fork it, build something better with it.
+
+Zetryn's own **models** (Hardes / Medifus / Easfus) and **hosted serving** are
+behind a subscription at [zetryn.com](https://zetryn.com). Public providers
+(Groq, Gemini, OpenRouter, OpenAI, Anthropic) work today, free of charge to
+Zetryn, with your own keys.

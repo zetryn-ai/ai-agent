@@ -1,0 +1,88 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "zetryn-trading"
+version = "0.1.0"
+description = "AI Agent Trading from Zetryn AI. Graph-based agents for Solana memecoin trading: scanner + sniper, with structured LLM reasoning."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "Lema", email = "team@zetryn.com" },
+]
+keywords = [
+    "ai-agent",
+    "trading",
+    "solana",
+    "memecoin",
+    "llm",
+    "agent-framework",
+    "zetryn",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = [
+    "pydantic>=2.7",
+    "httpx>=0.27",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.5",
+]
+
+[project.urls]
+Homepage = "https://zetryn.com"
+Documentation = "https://github.com/zetryn-ai/zetryn-trading#readme"
+Repository = "https://github.com/zetryn-ai/zetryn-trading"
+Issues = "https://github.com/zetryn-ai/zetryn-trading/issues"
+Changelog = "https://github.com/zetryn-ai/zetryn-trading/blob/main/CHANGELOG.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["zetryn"]
+
+[tool.hatch.build.targets.sdist]
+# Include the trading contract + strategies as reference, but only `zetryn`
+# ships in the wheel (per the dependency rule documented in design docs).
+include = [
+    "zetryn/",
+    "trading/",
+    "strategies/",
+    "examples/",
+    "tests/",
+    "docs/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    ".env.example",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
