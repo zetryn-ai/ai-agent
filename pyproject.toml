@@ -22,7 +22,7 @@ keywords = [
     "zetryn",
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Financial and Insurance Industry",
     "License :: OSI Approved :: MIT License",
@@ -51,10 +51,10 @@ dev = [
 
 [project.urls]
 Homepage = "https://zetryn.com"
-Documentation = "https://github.com/zetryn-ai/zetryn-trading#readme"
-Repository = "https://github.com/zetryn-ai/zetryn-trading"
-Issues = "https://github.com/zetryn-ai/zetryn-trading/issues"
-Changelog = "https://github.com/zetryn-ai/zetryn-trading/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/zetryn/zetryn-trading#readme"
+Repository = "https://github.com/zetryn/zetryn-trading"
+Issues = "https://github.com/zetryn/zetryn-trading/issues"
+Changelog = "https://github.com/zetryn/zetryn-trading/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["zetryn"]

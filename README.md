@@ -2,6 +2,18 @@
 
 **AI Agent Trading from Zetryn AI.**
 
+> [!WARNING]
+> **🚧 Alpha — work in progress.** Zetryn Trading is in active development.
+> Public APIs may change between minor versions, the AI analyst prompts are
+> still being tuned with real outcome data, and the Zetryn platform
+> (subscription auth, hosted Hardes / Medifus / Easfus models) is **not yet
+> live**. Today the library runs on public LLM providers (Groq / Gemini /
+> OpenRouter / OpenAI / Anthropic) with your own keys.
+>
+> **Recommended use right now:** development, research, paper trading,
+> backtests, dogfooding inside your own bot. **Not yet recommended for
+> unattended live trading with real funds.** No warranty — see [LICENSE](LICENSE).
+
 A Python library that turns raw Solana memecoin data into structured,
 auditable trading decisions. You bring the bot, the wallet, and the RPC;
 Zetryn Trading provides the **agent** — a graph of LLM analysts and hard-rule
@@ -290,12 +302,30 @@ reverse.
 
 ## Status
 
+**Maturity:** Alpha — actively developed, breaking changes possible between
+0.x releases until the API stabilises.
+
+What's built:
+
 - ✅ Core engine, LLM layer, tools, memory, observability, auth seam, backtest
 - ✅ Scanner v2 (AI-first, M8)
 - ✅ Sniper with `rule` / `llm` / `hybrid` / `hybrid_audit` modes (M9)
 - ✅ Schema enrichment for memecoin signals (M7)
-- 🚧 Zetryn platform (RemoteSubscriptionAuth, hosted vLLM, billing)
-- 📅 YAML strategy loader, multi-agent panel, vector memory (later)
+- ✅ Packaging + docs (M10)
+
+What's in progress / not yet ready:
+
+- 🚧 Real outcome data → analyst prompt tuning (need live runs to calibrate)
+- 🚧 Zetryn platform: `RemoteSubscriptionAuth`, hosted vLLM serving
+  Hardes / Medifus / Easfus models, billing
+- 🚧 Anthropic native adapter (prompt caching, extended thinking)
+
+Planned later (not blocking 0.1.x):
+
+- 📅 YAML strategy loader (once 3+ strategies in code reveal repeating patterns)
+- 📅 Multi-agent panel via `AgentNode` (specialist analyst subgraphs)
+- 📅 Vector / semantic memory for cross-token reasoning
+- 📅 Copy-trade strategy reference agent
 
 ---
 
