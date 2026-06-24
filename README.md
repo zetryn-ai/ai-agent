@@ -1,14 +1,14 @@
-# Zetryn Agent Framework
+# Zetryn Trading
 
 **AI Agent Trading from Zetryn AI.**
 
-A Python framework for building AI agents that decide on Solana memecoin trades.
-You bring the bot, the wallet, and the RPC; Zetryn provides the **agent** — a
-graph of LLM analysts and hard-rule guardrails that turns raw token data into
-structured, auditable trading decisions.
+A Python library that turns raw Solana memecoin data into structured,
+auditable trading decisions. You bring the bot, the wallet, and the RPC;
+Zetryn Trading provides the **agent** — a graph of LLM analysts and hard-rule
+guardrails.
 
 ```
-BOT (yours)                   ZETRYN (this framework)
+BOT (yours)                   ZETRYN TRADING (this library)
 ─────────────                 ─────────────────────────────────────
 gather token data  ──push──>  safety_gate → intel_gate → market_gate
                                                   │
@@ -26,7 +26,7 @@ gather token data  ──push──>  safety_gate → intel_gate → market_gate
 execute (or not) <───────────────────────────────┘
 ```
 
-The framework **decides**; the bot **executes**. Zetryn never holds your
+Zetryn Trading **decides**; the bot **executes**. The library never holds your
 private key and never touches the chain.
 
 ---
@@ -137,7 +137,7 @@ pip install zetryn-trading
 Or from source:
 
 ```bash
-git clone https://github.com/zetryn-ai/zetryn-trading
+git clone https://github.com/zetryn/zetryn-trading
 cd zetryn-trading
 pip install -e ".[dev]"
 ```
@@ -213,7 +213,7 @@ the subscription (Free / Basic / Pro / Max). No per-token billing for users.
 
 ```
 zetryn-trading/
-├── zetryn/              ← the framework (installable; only this ships in wheel)
+├── zetryn/              ← the agent library (installable; only this ships in wheel)
 │   ├── core/            ← graph engine: State, Node, Edge, Graph, Command
 │   ├── llm/             ← LLMClient, OpenAICompatibleClient, KeyPool, LLMNode
 │   ├── tools/           ← Tool, ToolRegistry
@@ -239,7 +239,7 @@ schemas if your domain isn't Solana memecoins.
 
 ## Push vs pull
 
-The framework supports both data-ingress patterns:
+Zetryn Trading supports both data-ingress patterns:
 
 - **Push** (recommended for production): bot fetches data, builds `TokenInput`,
   calls `agent.run(State(context=TradingContext(token=token_input)))`. Latency
@@ -253,7 +253,7 @@ Test, backtest, and live are the same graph — only the provider changes.
 
 ## Pre-filter at the bot
 
-The framework is cheap to run, but **filling `TokenInput` is not** — Helius,
+Zetryn Trading is cheap to run, but **filling `TokenInput` is not** — Helius,
 GMGN, Twitter, DexScreener all cost API quota. Pre-filter at the bot:
 
 ```python
@@ -272,9 +272,9 @@ discovery.
 
 ---
 
-## What the framework owns vs what the bot owns
+## What Zetryn Trading owns vs what the bot owns
 
-| Framework | Bot |
+| Zetryn Trading | Bot |
 |---|---|
 | Graph orchestration | RPC, wallet, signing |
 | LLM calls (advisor / analyst / decider) | Hot loop, mempool watching |
@@ -283,7 +283,7 @@ discovery.
 | Observability (trace, hooks) | Pre-filter, fetch budgeting |
 | Backtest harness | Live market data feeds |
 
-Boundary is non-negotiable: **framework decides, bot executes.** Never the
+Boundary is non-negotiable: **Zetryn Trading decides, bot executes.** Never the
 reverse.
 
 ---
