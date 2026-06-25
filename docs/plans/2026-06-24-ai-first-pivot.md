@@ -1,8 +1,10 @@
 # Zetryn Agent Framework — AI-First Pivot
 
 **Date:** 2026-06-24
-**Status:** Approved (decision recorded), implementation in progress
+**Status:** Implementation complete through M10. M8 hardened and closed in **v0.3.0** (2026-06-25); see [docs/CAPABILITIES.md §5](../CAPABILITIES.md) for the criterion-by-criterion evidence.
 **Supersedes (in part):** [2026-06-23-zetryn-agent-framework-design.md](2026-06-23-zetryn-agent-framework-design.md) — sections 2 (LLM role row), 5 (LLM Layer), 9 (Use-Case Mapping). All other sections of the 2026-06-23 doc remain authoritative.
+
+> **Update 2026-06-25:** §7 roadmap, §10 acceptance criteria, and §11 out-of-scope list have been annotated to reflect what shipped (v0.1.0 → v0.3.0). Three items that were "out of scope" — `KnowledgePack`, `LLMRouter`, `ReflectiveNode` — were prioritised early as **pre-P1 foundations** (F1/F3/F2) because they unblock the learning loop that M8 needed to be meaningful.
 
 ---
 
@@ -211,10 +213,13 @@ To make the scope of this pivot unambiguous:
 | S1 | ZetrynClient + auth seam | ✅ done (stub) |
 | M5 | Backtest | ✅ done |
 | M6 | Agent B (sniper v1, rule + LLMDecisionNode) | ✅ done |
-| **M7** | **Schema enrichment** (ActivityData, WalletIntel, PumpfunData, enriched social) | **✅ done (this session)** |
-| **M8** | **Scanner v2 — AI-first** (`analyst` LLM node + hard gates + guardrail; phase 1 single rich call) | **🚧 next** |
-| **M9** | **Sniper v2 — `hybrid_audit` mode** (rule decide + LLM verify async) | planned |
-| **M10** | **Packaging + README** (pip install, AI-Agent-positioned docs, examples) | planned |
+| **M7** | **Schema enrichment** (ActivityData, WalletIntel, PumpfunData, enriched social) | **✅ done (v0.1.0)** |
+| **M8** | **Scanner v2 — AI-first** (`analyst` LLM node + hard gates + guardrail; phase 1 single rich call) | **✅ done (v0.1.0); hardened + closed in v0.3.0 — see §10 below** |
+| **M9** | **Sniper v2 — `hybrid_audit` mode** (rule decide + LLM verify async) | **✅ done (v0.1.0)** |
+| **M10** | **Packaging + README** (pip install, AI-Agent-positioned docs, examples) | **✅ done (v0.1.0)** |
+| **F1** | **`KnowledgePack`** — markdown + JSON playbook loader (pre-P1 foundation, was M13+) | **✅ done (v0.2.0)** |
+| **F3** | **`LLMRouter`** — multi-provider failover + per-model throttle (pre-P1 foundation) | **✅ done (v0.2.0)** |
+| **F2** | **`ReflectiveNode`** — loss-pattern extractor from `DecisionLog` (pre-P1 foundation) | **✅ done (v0.2.0); wired into scanner v0.3.0** |
 | M11 | Phase 2 LLM strategy variant — parallel specialist nodes (paid providers) | later |
 | M12 | Phase 3 LLM strategy variant — Zetryn model mapping | platform-dependent |
 | M13+ | YAML loader, multi-agent panel, vector memory, copy-trade | earned later |
@@ -279,27 +284,37 @@ No changes required in: `zetryn/core/`, `zetryn/llm/`, `zetryn/memory/`, `zetryn
 
 ## 10. Acceptance criteria for M8
 
-Scanner v2 is considered done when:
+Scanner v2 closeout status (final, as of v0.3.0):
 
-1. `build_scanner(llm_client)` returns a graph with: 3 hard gates → 1 analyst → 1 guardrail → END (+ reject path).
-2. With stub LLM, all 16 dummy tokens (after M7 enrichment) produce sensible decisions:
-   - All rugs (MINT_RUG / FREEZE_RUG / HONEYPOT / BUNDLED / DEV_REPEAT_RUG) → SKIP via hard gate (no LLM call).
-   - WHALE → SKIP via hard gate (concentration).
-   - DUST / GHOST / HYPE_NOLIQ → SKIP via market hard gate (no LLM call).
-   - GEM / SMART_MONEY / CURVE_NEAR_GRAD → ALERT with rich `FullAnalysis` reasoning.
-   - FRESH / MID / NO_SOCIAL / SELL_PRESSURE → WATCH or context-appropriate verdict.
-3. `Decision.analysis` field carries the full `FullAnalysis` for downstream display.
-4. All 80 existing tests pass (with updated assertions where needed).
-5. `examples/walkthrough.py` prints per-aspect analyst reasoning per token — the demo that demonstrates "AI Agent".
-6. With real Groq key configured, end-to-end scan completes in ≤ 5s per token (95th percentile).
-7. Free-tier KeyPool rotation verified to handle 429s gracefully without crashing scans.
+| # | Criterion | Status | Evidence |
+|---|---|---|---|
+| 1 | `build_scanner(llm_client)` returns: 3 hard gates → analyst → finalize (+ reject path) | ✅ v0.1.0 | [`strategies/agents/scanner.py`](../../strategies/agents/scanner.py) |
+| 2 | 16 dummy tokens produce sensible decisions with stub LLM | ✅ v0.1.0 | [`tests/test_scanner.py`](../../tests/test_scanner.py); sample fixtures reduced to GOOD/RUG/LOWLIQ post-M10 for compactness, behaviour preserved |
+| 3 | `Decision.analysis` carries the full `FullAnalysis` | ✅ v0.1.0 | [`trading/schemas.py`](../../trading/schemas.py) |
+| 4 | All existing tests pass (was 80; **now 146**) | ✅ v0.3.0 | full pytest green |
+| 5 | `examples/walkthrough.py` prints per-aspect analyst reasoning | ✅ v0.1.0 | [`examples/walkthrough.py`](../../examples/walkthrough.py) |
+| 6 | Real Groq p95 ≤ 5s per token | ⚠️ **measurable, not always met on free tier** — median ~1.5s ✅, p95 can spike to ~11s under rate-limit variance. Mitigation: `LLMRouter` with ≥2 providers. Bench script: [`examples/bench_scanner_latency.py`](../../examples/bench_scanner_latency.py) | v0.3.0 |
+| 7 | KeyPool 429 rotation graceful | ✅ v0.3.0 | 3 stress tests in [`tests/test_llm.py`](../../tests/test_llm.py) (cascade, exhaustion, mixed transient errors) |
+| 8 | (added in v0.3.0) Analyst sees real outcome data | ✅ v0.3.0 | `ReflectiveNode` wired via `build_scanner(..., decision_log=...)`; lessons block layered before analyst persona |
+
+The `guardrail` node mentioned in §2.2 was implemented as the `finalize` rule
+node in [`strategies/nodes/decide.py`](../../strategies/nodes/decide.py), which applies the same hard-rule
+overrides the original design called for (LLM cannot upgrade `skip` to
+`alert` when liquidity is below the floor, etc.).
 
 ---
 
 ## 11. Out of scope for this pivot
 
-These remain on the long-term roadmap but are **not** required for M8/M9/M10:
+Updated 2026-06-25 to reflect which "out of scope" items shipped early and
+which remain on the long-term roadmap.
 
+**Shipped early as pre-P1 foundations** (see [docs/CAPABILITIES.md](../CAPABILITIES.md)):
+- `KnowledgePack` (F1) — markdown + JSON playbook loader, scanner/sniper integration. **Shipped v0.2.0**.
+- `LLMRouter` (F3) — multi-provider failover + per-model throttle, free-tier presets for Groq / Gemini / OpenRouter. **Shipped v0.2.0**.
+- `ReflectiveNode` (F2) — rule-based loss-pattern extractor from `DecisionLog`, wired into `build_scanner`. **Shipped v0.2.0 + v0.3.0**.
+
+**Still on long-term roadmap (M13+):**
 - YAML loader for graphs
 - Multi-agent panel (`AgentNode` as sub-graph)
 - Vector / semantic memory
