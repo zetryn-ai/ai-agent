@@ -1,7 +1,9 @@
-# Zetryn — Capabilities & Gap Analysis
+# Zetryn — Capabilities, Roadmap & Gap Analysis
 
-Status snapshot of the framework **before** the P1–P4 work begins.
-Use this as a single source of truth for "what works today vs. what we still need to build".
+**This is the single source of truth for project status.** README points here
+for the matrix; the architecture decision records in [`plans/`](plans/) point
+here for milestone status; CHANGELOG references the same versions. If anything
+disagrees with this document, this document wins.
 
 > Legend: ✅ implemented · ⚠️ partial · ❌ not yet
 
@@ -136,3 +138,61 @@ Layering inside the analyst system prompt (top → bottom):
 1. `KnowledgePack` system blocks (static rules)
 2. Reflection lessons (dynamic, from past outcomes)
 3. Analyst persona + per-token fact sheet
+
+---
+
+## 6. Roadmap
+
+Milestones, foundations, and platform workstreams in one table. **Update this
+table on every release** — README and plan docs link here instead of duplicating it.
+
+| ID | Focus | Status | Shipped in |
+|---|---|---|---|
+| M0  | Core engine (`State`, `Node`, `Edge`, `Graph`, `Command`, trace, validator) | ✅ done | v0.1.0 |
+| M1  | LLM layer (`OpenAICompatibleClient`, `KeyPool`, structured output, fallback) | ✅ done | v0.1.0 |
+| M2  | Generic tools (`Tool`, `ToolRegistry`, timeout/graceful) | ✅ done | v0.1.0 |
+| M3  | Agent A (scanner v1, rule-heavy) | ✅ done | v0.1.0 |
+| M4  | Memory + observability (`Blacklist`, `DecisionLog`, hooks, logging, trace) | ✅ done | v0.1.0 |
+| S1  | `ZetrynClient` + auth seam (subscription stub) | ✅ done (stub) | v0.1.0 |
+| M5  | Backtest (`Backtester` + trading metrics) | ✅ done | v0.1.0 |
+| M6  | Agent B (sniper v1, rule + `LLMDecisionNode`) | ✅ done | v0.1.0 |
+| M7  | Schema enrichment (`ActivityData`, `WalletIntel`, `PumpfunData`, enriched social) | ✅ done | v0.1.0 |
+| M8  | Scanner v2 — AI-first (`analyst` LLM node + hard gates + guardrail) | ✅ done; hardened in v0.3.0 — see §5 | v0.1.0 + v0.3.0 |
+| M9  | Sniper v2 — `hybrid_audit` mode (rule decide + async LLM verify) | ✅ done | v0.1.0 |
+| M10 | Packaging + README (pip install, AI-Agent-positioned docs, examples) | ✅ done | v0.1.0 |
+| **F1**  | **`KnowledgePack`** — markdown + JSON playbook loader (pre-P1 foundation) | ✅ done | v0.2.0 |
+| **F3**  | **`LLMRouter`** — multi-provider failover + per-model throttle | ✅ done | v0.2.0 |
+| **F2**  | **`ReflectiveNode`** — loss-pattern extractor; wired into scanner | ✅ done | v0.2.0 + v0.3.0 |
+| M11 | Phase 2 LLM strategy — parallel specialist nodes (paid providers) | 📅 later | — |
+| M12 | Phase 3 LLM strategy — Zetryn model mapping (Easfus/Medifus/Hardes) | 📅 platform-dependent | — |
+| M13+ | YAML loader, multi-agent panel, vector memory, copy-trade strategy | 📅 earned later | — |
+
+**Platform workstream** (separate process, not gating the framework):
+P1 `RemoteSubscriptionAuth` + hosted vLLM · P2 billing + multi-tenant ·
+P3 observability dashboard (Next.js) · P4 model improvement loop.
+
+### Foundations summary
+
+| Foundation | Unblocks capabilities |
+|------------|-----------------------|
+| F1 `KnowledgePack` ✅ | #1, partly #7 |
+| F2 `ReflectiveNode` ✅ | #3, #4, #5, partly #7 |
+| F3 `LLMRouter` ✅ | #6 |
+
+**Progress:** F1 ✅ · F2 ✅ · F3 ✅ — all foundations in place. **P1 can start.**
+
+### What's next (concrete)
+
+Two open threads after v0.3.0, in no particular order:
+
+1. **Free-tier reliability ceiling.** M8 acceptance #6 (p95 ≤ 5s) is met only
+   when running through `LLMRouter` with ≥2 providers. A single Groq key still
+   shows p95 ~11s under rate-limit variance. Documenting this pattern in
+   examples + recommending the router as default is the cheapest mitigation.
+2. **LLM tool-use loop** (capability #8). `Tool`/`ToolRegistry` primitives
+   ship today but the analyst cannot invoke them mid-decision. Wiring the
+   OpenAI/Anthropic function-calling loop into `LLMNode` is the natural next
+   "small" feature before the bigger M11/M13 items.
+
+Anything not listed here is either done or in the M13+ bucket. If you're
+wondering "what about X?" — check the table above first.

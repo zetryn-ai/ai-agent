@@ -352,40 +352,32 @@ reverse.
 
 ## Status
 
-**Maturity:** Alpha — actively developed, breaking changes possible between
-0.x releases until the API stabilises.
+**Maturity:** Alpha (v0.3.0) — actively developed, breaking changes possible
+between 0.x releases until the API stabilises.
 
-What's built:
+**Single source of truth for roadmap & milestone status:**
+[`docs/CAPABILITIES.md`](docs/CAPABILITIES.md) §6. The summary below is just
+a snapshot — the table over there is what gets updated on every release.
 
-- ✅ Core engine, LLM layer, tools, memory, observability, auth seam, backtest
-- ✅ Scanner v2 (AI-first, M8)
-- ✅ Sniper with `rule` / `llm` / `hybrid` / `hybrid_audit` modes (M9)
-- ✅ Schema enrichment for memecoin signals (M7)
-- ✅ Packaging + docs (M10)
-- ✅ Pre-P1 foundations: `KnowledgePack` (playbook loader), `LLMRouter`
-  (multi-provider failover + per-model throttle), `ReflectiveNode`
-  (loss-pattern extractor from `DecisionLog`) — see
-  [docs/CAPABILITIES.md](docs/CAPABILITIES.md)
-- ✅ M8 learning loop closed: `build_scanner(..., decision_log=...)` injects
-  recent loss patterns into the analyst system prompt every run. Bench
-  script at [`examples/bench_scanner_latency.py`](examples/bench_scanner_latency.py)
-  validates real-provider p95 latency.
+What's built (v0.3.0):
 
-What's in progress / not yet ready:
+- Core engine, LLM layer, tools, memory, observability, auth seam, backtest
+- Scanner v2 (AI-first, M8) with the learning loop closed —
+  `build_scanner(..., decision_log=...)` injects past loss patterns into the
+  analyst system prompt every run
+- Sniper with `rule` / `llm` / `hybrid` / `hybrid_audit` modes (M9)
+- Pre-P1 foundations: `KnowledgePack`, `LLMRouter` (multi-provider failover
+  + per-model throttle), `ReflectiveNode`
+- Latency bench at [`examples/bench_scanner_latency.py`](examples/bench_scanner_latency.py)
 
-- 🚧 Live-tier reliability: free-tier Groq p95 latency can spike past the
-  5s M8 target due to rate-limit variance. Recommended mitigation today
-  is `LLMRouter` with ≥2 providers (Groq + Gemini Flash).
-- 🚧 Zetryn platform: `RemoteSubscriptionAuth`, hosted vLLM serving
-  Hardes / Medifus / Easfus models, billing
-- 🚧 Anthropic native adapter (prompt caching, extended thinking)
+Known limits:
 
-Planned later (not blocking 0.1.x):
-
-- 📅 YAML strategy loader (once 3+ strategies in code reveal repeating patterns)
-- 📅 Multi-agent panel via `AgentNode` (specialist analyst subgraphs)
-- 📅 Vector / semantic memory for cross-token reasoning
-- 📅 Copy-trade strategy reference agent
+- Free-tier Groq p95 can spike past the M8 5s target — mitigation is
+  `LLMRouter` with ≥2 providers (Groq + Gemini Flash). See CAPABILITIES.md §5.
+- Zetryn platform (hosted models, subscription auth) is **not yet live** —
+  the seam is stubbed; production uses public providers with your own keys.
+- LLM tool-use loop is the next "small" feature on the list — see
+  CAPABILITIES.md §6 "What's next".
 
 ---
 
@@ -403,13 +395,16 @@ No API key required. Tests use offline stubs + `MockDataProvider`.
 
 ## Documentation
 
-- [Capabilities & Gap Analysis](docs/CAPABILITIES.md) —
-  matrix of what works today, links to source modules, F1–F3 status
-- [Design (2026-06-23)](docs/plans/2026-06-23-zetryn-agent-framework-design.md) —
-  original architecture
-- [AI-First Pivot (2026-06-24)](docs/plans/2026-06-24-ai-first-pivot.md) —
-  current architecture, 3-phase LLM evolution, sniper `hybrid_audit`
-- [CHANGELOG](CHANGELOG.md)
+| Doc | Purpose | Update cadence |
+|---|---|---|
+| [CAPABILITIES.md](docs/CAPABILITIES.md) | **Source of truth** — capability matrix, roadmap, M8 closeout evidence | Every release |
+| [CHANGELOG.md](CHANGELOG.md) | Version-by-version notes | Every release |
+| [plans/2026-06-23-…](docs/plans/2026-06-23-zetryn-agent-framework-design.md) | Architecture Decision Record — original framework design | Frozen (historical) |
+| [plans/2026-06-24-…](docs/plans/2026-06-24-ai-first-pivot.md) | Architecture Decision Record — AI-first pivot rationale | Frozen (historical) |
+
+If a roadmap line in any of the plan docs disagrees with CAPABILITIES.md,
+**CAPABILITIES.md is correct** — the plans are kept as snapshots of the
+decisions, not as live tracking.
 
 ---
 

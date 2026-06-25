@@ -1,7 +1,12 @@
 # Zetryn Agent Framework — Design
 
 **Date:** 2026-06-23
-**Status:** Approved (brainstorming complete), implementation in progress
+**Status:** Architecture Decision Record (historical). Approved 2026-06-23, partially superseded 2026-06-24.
+
+> **2026-06-25 — Roadmap moved.** The roadmap table that was in §11 is now
+> maintained in [docs/CAPABILITIES.md §6](../CAPABILITIES.md#6-roadmap) — the
+> single source of truth for milestones. This document is preserved as a
+> historical ADR capturing the original architectural decisions.
 
 > **Update 2026-06-24:** Sections **2 (Key Decisions — LLM role row)**, **5 (LLM Layer)**, and **9 (Use-Case Mapping)** are partially superseded by [2026-06-24-ai-first-pivot.md](2026-06-24-ai-first-pivot.md), which reframes the framework as AI-first (LLM as primary analyst, rules as hard gates + guardrails). All other sections of this document — core engine, memory, observability, boundary, dependency rules, project structure, auth seam, business model — **remain authoritative**.
 
@@ -258,17 +263,13 @@ Only `zetryn` is packaged into the wheel.
 
 ## 11. Roadmap
 
-| M | Focus | Status |
-|---|---|---|
-| M0 | Core engine (State, Node, Graph, Command, snapshot, validator) | ✅ done |
-| M1 | LLM layer (OpenAICompatibleClient + key pool + structured output + fallback) | ✅ done |
-| M2 | Generic tools (Tool, registry, timeout/graceful) | ✅ done |
-| M3 | **Agent A (scanner)** — real graph end-to-end ("first light") | ✅ done |
-| M4 | Memory + observability (Blacklist, DecisionLog, hooks, logging, trace) | ✅ done |
-| S1 | **ZetrynClient + auth seam** (subscription gate, model tiers, provider tiers, License) | ✅ done (stub) |
-| M5 | Backtest (generic Backtester + trading metrics: win-rate, PnL, rug recall) | ✅ done |
-| M6 | **Agent B (sniper)** — sub-ms pure-rule path + LLMDecisionNode (decide/hybrid + guardrail) | ✅ done |
-| M7+ | Earned later: YAML loader, multi-agent node, vector memory, copy-trade | later |
+> **Moved.** As of 2026-06-25 the active roadmap lives in
+> [`docs/CAPABILITIES.md §6`](../CAPABILITIES.md#6-roadmap). The original
+> table here listed M0–M6 + S1 as done and M7+ ("YAML loader, multi-agent
+> node, vector memory, copy-trade") as "earned later" — a snapshot accurate
+> at 2026-06-23. Three of those M7+ items (KnowledgePack, LLMRouter,
+> ReflectiveNode) shipped as pre-P1 foundations in v0.2.0–v0.3.0; the
+> rest stayed M13+. See CAPABILITIES.md for the current status.
 
 **Platform workstream (separate from the framework):** P1 RemoteSubscriptionAuth +
 hosted serving (vLLM) for one fine-tuned model · P2 billing + tiers + multi-tenant ·

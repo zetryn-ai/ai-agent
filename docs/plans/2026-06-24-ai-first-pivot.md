@@ -1,10 +1,15 @@
 # Zetryn Agent Framework — AI-First Pivot
 
 **Date:** 2026-06-24
-**Status:** Implementation complete through M10. M8 hardened and closed in **v0.3.0** (2026-06-25); see [docs/CAPABILITIES.md §5](../CAPABILITIES.md) for the criterion-by-criterion evidence.
+**Status:** Architecture Decision Record (historical). The pivot has been fully implemented; see [docs/CAPABILITIES.md §6](../CAPABILITIES.md#6-roadmap) for current milestone status.
 **Supersedes (in part):** [2026-06-23-zetryn-agent-framework-design.md](2026-06-23-zetryn-agent-framework-design.md) — sections 2 (LLM role row), 5 (LLM Layer), 9 (Use-Case Mapping). All other sections of the 2026-06-23 doc remain authoritative.
 
-> **Update 2026-06-25:** §7 roadmap, §10 acceptance criteria, and §11 out-of-scope list have been annotated to reflect what shipped (v0.1.0 → v0.3.0). Three items that were "out of scope" — `KnowledgePack`, `LLMRouter`, `ReflectiveNode` — were prioritised early as **pre-P1 foundations** (F1/F3/F2) because they unblock the learning loop that M8 needed to be meaningful.
+> **2026-06-25 — Roadmap moved.** §7 (roadmap table) is no longer maintained
+> here. The active roadmap lives in [docs/CAPABILITIES.md §6](../CAPABILITIES.md#6-roadmap).
+> §10 (M8 acceptance criteria) and §11 (out-of-scope list) are preserved as
+> a snapshot of the original pivot decision and the rationale for which
+> "out-of-scope" items were promoted to pre-P1 foundations (F1/F2/F3). For
+> the current shipped status of each criterion, see CAPABILITIES.md §5.
 
 ---
 
@@ -203,26 +208,13 @@ To make the scope of this pivot unambiguous:
 
 ## 7. Updated roadmap
 
-| M | Focus | Status |
-|---|---|---|
-| M0 | Core engine | ✅ done |
-| M1 | LLM layer (OpenAICompatibleClient + KeyPool + structured output + fallback) | ✅ done |
-| M2 | Generic tools | ✅ done |
-| M3 | Agent A (scanner v1, rule-heavy) | ✅ done |
-| M4 | Memory + observability | ✅ done |
-| S1 | ZetrynClient + auth seam | ✅ done (stub) |
-| M5 | Backtest | ✅ done |
-| M6 | Agent B (sniper v1, rule + LLMDecisionNode) | ✅ done |
-| **M7** | **Schema enrichment** (ActivityData, WalletIntel, PumpfunData, enriched social) | **✅ done (v0.1.0)** |
-| **M8** | **Scanner v2 — AI-first** (`analyst` LLM node + hard gates + guardrail; phase 1 single rich call) | **✅ done (v0.1.0); hardened + closed in v0.3.0 — see §10 below** |
-| **M9** | **Sniper v2 — `hybrid_audit` mode** (rule decide + LLM verify async) | **✅ done (v0.1.0)** |
-| **M10** | **Packaging + README** (pip install, AI-Agent-positioned docs, examples) | **✅ done (v0.1.0)** |
-| **F1** | **`KnowledgePack`** — markdown + JSON playbook loader (pre-P1 foundation, was M13+) | **✅ done (v0.2.0)** |
-| **F3** | **`LLMRouter`** — multi-provider failover + per-model throttle (pre-P1 foundation) | **✅ done (v0.2.0)** |
-| **F2** | **`ReflectiveNode`** — loss-pattern extractor from `DecisionLog` (pre-P1 foundation) | **✅ done (v0.2.0); wired into scanner v0.3.0** |
-| M11 | Phase 2 LLM strategy variant — parallel specialist nodes (paid providers) | later |
-| M12 | Phase 3 LLM strategy variant — Zetryn model mapping | platform-dependent |
-| M13+ | YAML loader, multi-agent panel, vector memory, copy-trade | earned later |
+> **Moved.** As of 2026-06-25 the active roadmap lives in
+> [`docs/CAPABILITIES.md §6`](../CAPABILITIES.md#6-roadmap). This section
+> originally introduced M7–M10 (the pivot work itself) and predicted M11/M12
+> (phase 2/3 LLM evolution) plus M13+ (YAML loader, multi-agent panel, vector
+> memory, copy-trade). All of M7–M10 shipped in v0.1.0; F1/F2/F3 were
+> additionally promoted from M13+ to pre-P1 foundations and shipped in
+> v0.2.0–v0.3.0. See CAPABILITIES.md for the current table.
 
 **Platform workstream** (unchanged from 2026-06-23):
 P1 RemoteSubscriptionAuth + hosted vLLM serving · P2 billing + tiers + multi-tenant · P3 observability dashboard · P4 model improvement loop.
