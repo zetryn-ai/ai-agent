@@ -17,7 +17,7 @@ Use this as a single source of truth for "what works today vs. what we still nee
 | 4 | Reflective analysis of past decision blunders | ✅ | [`zetryn/memory/reflective.py`](../zetryn/memory/reflective.py) (`reflect()`, `ReflectionResult`) | Deterministic post-mortem extractor groups losers by feature buckets and ranks them by `loss_count`. |
 | 5 | Loss-pattern recognition from recorded outcomes | ✅ | [`zetryn/memory/reflective.py`](../zetryn/memory/reflective.py) (`Pattern`) | Numeric features bucketed by quartile, categorical features grouped by value. Emits patterns like `top10_pct = > 0.30: 3/4 losses (rate 75%, avg pnl -22%)`. |
 | 6 | Per-model throttle + auto-fallback across keys / providers | ✅ | [`zetryn/llm/router.py`](../zetryn/llm/router.py) (`LLMRouter`, `RouterEntry`, `get_free_tier_limit`) | Multi-provider failover wraps any number of `LLMClient`s and implements the same protocol. Per-entry `RateLimit` enforces RPM/RPD/TPM/TPD via sliding windows. Free-tier presets per-model for Groq, Gemini, and OpenRouter `:free` shared bucket. |
-| 7 | Persisting new knowledge learned at runtime | ✅ | [`zetryn/memory/store.py`](../zetryn/memory/store.py), [`zetryn/knowledge/pack.py`](../zetryn/knowledge/pack.py), [`zetryn/memory/reflective.py`](../zetryn/memory/reflective.py) | Static playbook via `KnowledgePack`; mutable per-run state via `MemoryStore`; outcomes auto-summarised back into the next run by `ReflectiveNode`. The learning loop is now closed. |
+| 7 | Persisting new knowledge learned at runtime | ✅ | [`zetryn/memory/store.py`](../zetryn/memory/store.py), [`zetryn/knowledge/pack.py`](../zetryn/knowledge/pack.py), [`zetryn/memory/reflective.py`](../zetryn/memory/reflective.py), [`strategies/agents/scanner.py`](../strategies/agents/scanner.py) | Static playbook via `KnowledgePack`; mutable per-run state via `MemoryStore`; outcomes auto-summarised back into the next run by `ReflectiveNode`. Wired end-to-end into the scanner via `build_scanner(..., decision_log=...)` — the analyst sees a `Lessons from recent decisions` system block before deciding. The learning loop is now closed. |
 | 8 | LLM-driven tool/skill invocation (function calling) | ⚠️ | [`zetryn/tools/`](../zetryn/tools/) (`Tool`, `ToolRegistry`) | `Tool` schema + safe-call (timeout, no-crash, OpenAI function-spec) exists. Rule nodes can already call tools directly. Missing: an LLM tool-use loop so the analyst can invoke tools mid-decision via the provider's native function-calling API. Tracked as a follow-up to F1–F3. |
 
 ---
@@ -94,3 +94,45 @@ These three components unblock the rest of the roadmap. Build them first, in thi
 Once F1–F3 are in place, P1–P4 can proceed without re-touching the core engine.
 
 **Progress:** F1 ✅ · F2 ✅ · F3 ✅ — all foundations in place. **P1 can start.**
+
+---
+
+## 5. M8 closeout — Scanner v2 hardening
+
+The original M8 (Scanner v2 AI-first) shipped in v0.1.0 against the acceptance
+criteria in [`docs/plans/2026-06-24-ai-first-pivot.md`](plans/2026-06-24-ai-first-pivot.md) §10.
+The criteria that remained open or untested are addressed here:
+
+| Criterion | Status | Evidence |
+|---|---|---|
+| #1–#5 (graph shape, dummy tokens, `Decision.analysis`, tests, walkthrough) | ✅ from 0.1.0 | unchanged |
+| #6 Real Groq e2e p95 ≤ 5s | ⚠️ **measurable now, target not always met** | [`examples/bench_scanner_latency.py`](../examples/bench_scanner_latency.py) — sample run on free Groq: median 1.5s, p95 ~11s (free-tier variance). Mitigation: run with `LLMRouter` and ≥2 providers in production. |
+| #7 KeyPool 429 handling | ✅ | [`tests/test_llm.py`](../tests/test_llm.py) adds 3-key cascade, exhaustion, mixed-error recovery tests. |
+| Analyst prompt tuning with real outcome data | ✅ structural | `ReflectiveNode` wired into `build_scanner` — every run, the analyst sees a lessons block compiled from the last N decisions in `DecisionLog`. Tuning quality is now data-driven, not prompt-author guessing. |
+
+### What changed in scanner.py
+
+`build_scanner` gains three optional parameters:
+
+```python
+build_scanner(
+    llm_client,
+    knowledge_pack=pack,          # F1 — static playbook (since 0.2.0)
+    decision_log=log,             # F2 — learning loop (this closeout)
+    reflect_window=20,
+    reflect_feature_keys=["top10_pct", "source"],
+    reflect_top_k=5,
+)
+```
+
+Graph shape when `decision_log` is provided:
+
+```
+safety_gate → intel_gate → market_gate → reflect → analyst → finalize
+                                            (compiles lessons_text from DecisionLog)
+```
+
+Layering inside the analyst system prompt (top → bottom):
+1. `KnowledgePack` system blocks (static rules)
+2. Reflection lessons (dynamic, from past outcomes)
+3. Analyst persona + per-token fact sheet

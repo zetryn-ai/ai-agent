@@ -5,6 +5,45 @@ All notable changes to `zetryn-trading` will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] — 2026-06-25
+
+M8 closeout: the scanner's learning loop is now wired end-to-end. Past
+losing decisions become a dynamic system-prompt block on every run, so
+analyst output is conditioned on real outcomes — not just static prompt
+authoring.
+
+### Added
+- **`build_scanner(..., decision_log=...)`** — when a `DecisionLog` is
+  provided, a `ReflectiveNode` is inserted between the market hard gate
+  and the analyst LLM. It compiles a `lessons_text` summary from the last
+  N decisions (configurable via `reflect_window`, `reflect_feature_keys`,
+  `reflect_top_k`) and the analyst sees it as a `Lessons from recent
+  decisions` system block.
+- **Analyst prompt layering** in `make_analyst_prompt(pack)` now stacks
+  three layers top-to-bottom: `KnowledgePack` blocks → reflection lessons
+  → analyst persona + per-token fact sheet.
+- **`examples/bench_scanner_latency.py`** — latency benchmark for M8
+  acceptance criterion #6. Validates real-provider p95 against the 5s
+  target. Skips cleanly when no provider key is configured.
+- **KeyPool stress tests** — three new cases in `tests/test_llm.py`:
+  3-key cascade with mid-pool recovery, full-pool exhaustion,
+  mixed 429+500+200 sequence with correct rotation accounting.
+- **`tests/test_scanner_reflection.py`** — 7 cases covering scanner +
+  reflective loop wiring, backwards compatibility, layering with
+  KnowledgePack, and the no-LLM-no-reflect default path.
+
+### Changed
+- `make_analyst_prompt(None)` no longer returns `analyst_prompt` by
+  identity — it returns a wrapper so the lessons block can be injected
+  dynamically at run time. Behaviour-equivalent when no pack and no
+  lessons are present; only test code using `is` identity needs updating.
+
+### Notes
+- M8 acceptance criterion #6 (p95 ≤ 5s) is now measurable with the bench
+  script. Free-tier Groq frequently meets the median target (~1.5s) but
+  p95 can spike past 5s under rate-limit variance. The recommended
+  production mitigation is `LLMRouter` with ≥2 providers.
+
 ## [0.2.0] — 2026-06-24
 
 Pre-P1 foundations: deployments can now ship their own playbook, fan out across

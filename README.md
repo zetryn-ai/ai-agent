@@ -366,10 +366,16 @@ What's built:
   (multi-provider failover + per-model throttle), `ReflectiveNode`
   (loss-pattern extractor from `DecisionLog`) — see
   [docs/CAPABILITIES.md](docs/CAPABILITIES.md)
+- ✅ M8 learning loop closed: `build_scanner(..., decision_log=...)` injects
+  recent loss patterns into the analyst system prompt every run. Bench
+  script at [`examples/bench_scanner_latency.py`](examples/bench_scanner_latency.py)
+  validates real-provider p95 latency.
 
 What's in progress / not yet ready:
 
-- 🚧 Real outcome data → analyst prompt tuning (need live runs to calibrate)
+- 🚧 Live-tier reliability: free-tier Groq p95 latency can spike past the
+  5s M8 target due to rate-limit variance. Recommended mitigation today
+  is `LLMRouter` with ≥2 providers (Groq + Gemini Flash).
 - 🚧 Zetryn platform: `RemoteSubscriptionAuth`, hosted vLLM serving
   Hardes / Medifus / Easfus models, billing
 - 🚧 Anthropic native adapter (prompt caching, extended thinking)
