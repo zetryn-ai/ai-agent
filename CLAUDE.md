@@ -2,6 +2,41 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Framework Boundary (NON-NEGOTIABLE — read first, every session)
+
+**Zetryn Trading is an AI Agent Framework / library.** Public users (their
+bots) consume it: they push input (already-filtered or not), the framework
+returns a `Decision`, and the bot acts on it. Nothing in this repository
+should ever try to *fetch data*, *subscribe to feeds*, *hold keys*, *sign
+transactions*, *track positions*, or *execute trades*. All of that is the
+caller's responsibility.
+
+| The framework DOES | The user's bot DOES |
+|---|---|
+| Define input/output schemas (`TokenInput`, `KOLContext`, `Decision`, …) | Fetch / stream / enrich the data and fill those schemas |
+| Orchestrate the decision graph (nodes, edges, LLM calls, tool-use loops) | Subscribe to Helius / Cielo / GMGN / WS / RPC feeds |
+| Run LLM analyst calls and forward `tools` to providers | Implement each `Tool`'s async function against its data source |
+| Read `KnowledgePack` files the user shipped | Author & maintain those files (KOL whitelists, rules, lessons) |
+| Read `DecisionLog` for reflection / lessons | Call `record_outcome` after the trade is executed |
+| Return a `Decision` (action, size, reasons, flags) | Execute the trade, sign tx, manage slippage / MEV / position lifecycle |
+| Hold per-run state in `State.scratch` | Hold cross-run state (positions, cooldowns, watchlists) and pass via context |
+
+**Practical implications when designing or coding here:**
+- New schema field? Probably yes. New async fetcher inside `zetryn/`? **No.**
+- New rule node that reads `state.context.token.X`? Probably yes. New rule
+  node that opens a network connection? **No.**
+- New `Tool` definition (schema + example stub)? Yes. New `Tool` that
+  hard-codes a real API client to Helius? **No** — show the stub in
+  `examples/`, never wire production credentials inside the framework.
+- "The strategy needs X" is always shorthand for "the framework defines X's
+  shape; the bot supplies it". If any code or doc reads otherwise, it's a
+  bug — flag it.
+
+This boundary is reaffirmed at design-doc level in
+[`docs/plans/2026-06-25-kol-copytrade-strategy.md §0.5`](docs/plans/2026-06-25-kol-copytrade-strategy.md).
+If the boundary ever conflicts with an apparent feature request, ask
+the user to clarify before crossing it.
+
 ## Commands
 
 ```bash
