@@ -5,6 +5,41 @@ All notable changes to `zetryn-trading` will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] — 2026-06-25
+
+Free-tier reliability pattern shipped as a working example and integration
+tests. Closes M8 acceptance criterion #6 in practice: the scanner driven
+by an `LLMRouter` with two free providers keeps p95 below the 5s target,
+even when one provider rate-limits.
+
+### Added
+- **`examples/run_with_router.py`** — recommended production pattern:
+  build `LLMRouter([groq, gemini])` with per-model free-tier presets and
+  hand it straight to `build_scanner`. Falls back to a stub LLM when no
+  keys are configured, so the demo always runs.
+- **`examples/bench_scanner_latency.py` router mode** — new env knob
+  `ZETRYN_BENCH_PROVIDER=router` benches the scanner through a
+  multi-provider router so you can compare single-provider vs. router
+  p95 directly. `ZETRYN_GROQ_MODEL` / `ZETRYN_GEMINI_MODEL` choose which
+  model each entry uses.
+- **`tests/test_scanner_router.py`** — 5 integration cases proving the
+  router is a true drop-in `LLMClient`: single-entry equivalence,
+  failover on `LLMRateLimitError`, graceful neutral verdict when every
+  entry fails, persistent cooldown across scans, and `KnowledgePack`
+  blocks reach the analyst through the router unchanged.
+
+### Changed
+- **`docs/CAPABILITIES.md` §5** — adds a "Reliability pattern" subsection
+  with the recommended router snippet and a pointer to the bench script.
+  Criterion #6 status is now "single-provider ⚠️ / router ✅".
+- **README §Status** — clarifies that the router is the recommended
+  production pattern, with a direct link to the new example.
+
+### Notes
+- No core API changed. `LLMRouter` already satisfied `LLMClient` since
+  v0.2.0; v0.4.0 is the documentation + example + test layer proving it
+  end-to-end inside the scanner.
+
 ## [0.3.0] — 2026-06-25
 
 M8 closeout: the scanner's learning loop is now wired end-to-end. Past
