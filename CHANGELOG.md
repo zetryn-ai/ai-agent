@@ -5,6 +5,58 @@ All notable changes to `zetryn-trading` will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] — 2026-06-25
+
+KOL Copy-Trade gains a real AI mode. Ships K5 of the milestone breakdown.
+Triggered by a user observation in the v0.6.0 walkthrough run: with the
+copy-trade strategy in rule-only mode, the "AI Agent" branding was thin
+because no LLM ever ran in that flow. v0.7.0 closes that gap.
+
+### Added
+- **`KOLAnalystVerdict`** in `trading/schemas.py` — structured LLM
+  output: `approve` (bool veto switch), `size_multiplier` in [0, 1.5]
+  (scales the rule-derived size), `confidence`, `concerns` list,
+  `reasoning`. Re-exported from `trading`.
+- **`kol_analyst_prompt(state)`** + **`neutral_kol_verdict(state, exc)`**
+  in `strategies/nodes/kol_nodes.py` — the analyst's job is *not* to
+  re-decide the buy; it's to catch qualitative red flags the rules
+  cannot encode and to nudge size based on confluence. Neutral
+  fallback approves at multiplier=1.0 with `llm_failed=True` so an
+  LLM outage never silently kills trades.
+- **`mode="confirmed"`** in `build_kol_copytrade(...)` — opt-in flag
+  that inserts the LLM analyst between `fast_market` and `sizing`.
+  Requires `llm_client=...` (any `LLMClient`, including `LLMRouter`).
+  Default mode stays `rule` — backwards compatible.
+- **`sizing` node updated** to read `state.scratch["kol_analyst"]`:
+  - `approve=False` → emits `action="skip"` with `analyst_veto=True`
+  - `approve=True` → final size = rule_size × `size_multiplier`,
+    still clamped at `max_size`
+- **`examples/run_kol_copytrade.py`** updated with `ZETRYN_KOL_USE_GROQ=1`
+  switch to demo the confirmed flow with real Groq.
+- **10 new tests** in `tests/test_kol_confirmed_mode.py` covering
+  approve / veto / size up / size down / LLM failure / garbage output /
+  rule-mode backwards-compat / hard-gate short-circuit before LLM.
+- **`docs/CAPABILITIES.md`** updated — K5 row marked done; §6 "What's
+  next" reset to K6 (`audit` mode), K7 (Reflective integration), and a
+  fourth-strategy candidate.
+
+### Verified end-to-end
+On real Groq Llama 3.3 70b with the example pack, the analyst
+downgraded a rule-approved 2.47 SOL buy to 1.21 SOL (multiplier 0.5)
+citing low_liquidity / no_social_presence / bundler_detected — proving
+the LLM verdict materially shapes the final `Decision` rather than
+being decorative.
+
+### Changed
+- **README §Status** — bumped to v0.7.0; "three reference strategies"
+  section now mentions both KOL modes and links the env-var switch.
+
+### Notes
+- Boundary held: no fetcher landed inside the framework. The analyst
+  sees the same `KOLContext` the bot already pushed; the bot still
+  owns event subscription, KOL whitelist authoring, cooldown tracking,
+  and trade execution.
+
 ## [0.6.0] — 2026-06-25
 
 First strategy reference agent beyond Scanner/Sniper: **KOL Copy-Trade**

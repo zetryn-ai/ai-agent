@@ -194,7 +194,8 @@ table on every release** — README and plan docs link here instead of duplicati
 | Reliability | `LLMRouter` shipped as recommended production default + bench router mode | ✅ done | v0.4.0 |
 | Tool-use | LLM tool-use loop (`tool_use_loop`, `ToolUseNode`) — capability #8 | ✅ done | v0.5.0 |
 | **K (KOL Copy-Trade)** | **First strategy reference agent beyond Scanner/Sniper** — `build_kol_copytrade` rule mode, `KOLRegistry` from pack | ✅ done | v0.6.0 |
-| K5–K6 | KOL Copy-Trade `confirmed` (tool-use) + `audit` modes | 📅 later | — |
+| **K5** | **KOL Copy-Trade `confirmed` mode** — LLM analyst between rules and sizing, can veto or scale size via `KOLAnalystVerdict` | ✅ done | v0.7.0 |
+| K6 | KOL Copy-Trade `audit` mode (async LLM second opinion after rule decide) | 📅 later | — |
 | K7 | KOL Copy-Trade × `ReflectiveNode` integration | 📅 later | — |
 | M11 | Phase 2 LLM strategy — parallel specialist nodes (paid providers) | 📅 later | — |
 | M12 | Phase 3 LLM strategy — Zetryn model mapping (Easfus/Medifus/Hardes) | 📅 platform-dependent | — |
@@ -216,20 +217,18 @@ P3 observability dashboard (Next.js) · P4 model improvement loop.
 
 ### What's next (concrete)
 
-v0.6.0 closed the "first concrete strategy" thread (KOL Copy-Trade rule
-mode shipped). Natural next candidates:
+v0.7.0 closed the "AI in the copy-trade loop" gap (`confirmed` mode
+shipped with `KOLAnalystVerdict`). Natural next candidates:
 
-1. **K5: KOL Copy-Trade `confirmed` mode** — wire `ToolUseNode` with one
-   real tool (`kol_recent_performance`) so the analyst can fetch fresh
-   stats mid-decision when latency budget allows. Proves the tool-use
-   loop end-to-end with a domain-specific tool.
+1. **K6: KOL Copy-Trade `audit` mode** — rule decides instantly (sub-ms),
+   async LLM verifies in the background and writes to `DecisionLog`.
+   Mirror of the sniper's `hybrid_audit` pattern. Bridges speed and AI.
 2. **K7: KOL Copy-Trade × `ReflectiveNode`** — feed past copy-trade losers
-   back into the analyst prompt when `confirmed` mode is active.
-   Closes the learning loop on the new strategy.
-3. **Strategy #4 candidate** — once K5+K7 ship, a second strategy
-   (Pump.fun graduation snipe or Smart Money Confluence) would give us
-   three strategies in code → real signal that YAML loader (M13) is
-   worth building, not premature abstraction.
+   back into the analyst prompt when `confirmed` mode is active. Closes
+   the learning loop on the new strategy.
+3. **Strategy #4 candidate** (Pump.fun graduation snipe or Smart Money
+   Confluence) — three strategies in code → real signal that YAML loader
+   (M13) is worth building, not premature abstraction.
 4. **M11 — Phase 2 LLM** (parallel specialists) is still available
    whenever a paid provider is in play; `AgentNode` already supports it.
 5. **Anthropic native adapter** for prompt caching — only worth doing

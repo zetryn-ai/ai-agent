@@ -352,7 +352,7 @@ reverse.
 
 ## Status
 
-**Maturity:** Alpha (v0.6.0) — actively developed, breaking changes possible
+**Maturity:** Alpha (v0.7.0) — actively developed, breaking changes possible
 between 0.x releases until the API stabilises.
 
 **Single source of truth for roadmap & milestone status:**
@@ -366,9 +366,11 @@ What's built (v0.6.0):
   - Scanner v2 (AI-first, M8) — general classifier, learning loop closed via
     `build_scanner(..., decision_log=...)`
   - Sniper (M9) — `rule` / `llm` / `hybrid` / `hybrid_audit` modes
-  - **KOL Copy-Trade (v0.6.0)** — first strategy with an explicit entry
-    hypothesis. Consumes `KOLContext`, returns sized buy decisions.
+  - **KOL Copy-Trade (v0.7.0)** — first strategy with an explicit entry
+    hypothesis. Two modes: `rule` (sub-ms, no LLM) and **`confirmed`**
+    (LLM analyst can veto or scale size via `KOLAnalystVerdict`).
     Example: [`examples/run_kol_copytrade.py`](examples/run_kol_copytrade.py)
+    (`ZETRYN_KOL_USE_GROQ=1` flips it to confirmed mode with real Groq)
 - Pre-P1 foundations: `KnowledgePack`, `LLMRouter` (multi-provider failover
   + per-model throttle), `ReflectiveNode`
 - LLM tool-use loop: `tool_use_loop` + `ToolUseNode` let the analyst invoke
