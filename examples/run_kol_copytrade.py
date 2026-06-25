@@ -10,7 +10,10 @@ Two modes — switch via env var:
   (default)                                  rule mode, sub-ms, no LLM call
   ZETRYN_KOL_USE_GROQ=1                      confirmed mode with real Groq LLM
                                              analyst veto + size_multiplier
-  ZETRYN_GROQ_MODEL=llama-3.3-70b-versatile  optional, default shown
+  ZETRYN_GROQ_MODEL=openai/gpt-oss-20b       optional, default shown
+                                              (best red-flag detection in our
+                                              six-scenario variance test; see
+                                              git log for the comparison)
 
 The confirmed-mode path is what makes "AI Agent" in the brand
 non-empty for the copy-trade strategy: the LLM sees the full fact
@@ -314,7 +317,13 @@ def _build_groq_client():
         print("WARN: ZETRYN_KOL_USE_GROQ=1 but no GROQ_API_KEY[_N] found. "
               "Falling back to rule mode.")
         return None, None
-    model = os.environ.get("ZETRYN_GROQ_MODEL", "llama-3.3-70b-versatile")
+    # Default model: openai/gpt-oss-20b — best detection rate in the
+    # six-scenario variance test (catches toxic KOL pattern + sub-threshold
+    # bundler + sniper density). Override via ZETRYN_GROQ_MODEL if you
+    # prefer a different model. llama-3.3-70b-versatile is a strong
+    # alternative with richer reasoning but weaker red-flag detection
+    # for sub-threshold concerns.
+    model = os.environ.get("ZETRYN_GROQ_MODEL", "openai/gpt-oss-20b")
     client = OpenAICompatibleClient(ProviderConfig(
         name="groq", base_url=GROQ_BASE_URL, model=model,
         key_envs=keys, timeout_s=30.0,
