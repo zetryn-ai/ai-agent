@@ -352,7 +352,7 @@ reverse.
 
 ## Status
 
-**Maturity:** Alpha (v0.7.0) — actively developed, breaking changes possible
+**Maturity:** Alpha (v0.8.0) — actively developed, breaking changes possible
 between 0.x releases until the API stabilises.
 
 **Single source of truth for roadmap & milestone status:**
@@ -373,6 +373,11 @@ What's built (v0.6.0):
     (`ZETRYN_KOL_USE_GROQ=1` flips it to confirmed mode with real Groq)
 - Pre-P1 foundations: `KnowledgePack`, `LLMRouter` (multi-provider failover
   + per-model throttle), `ReflectiveNode`
+- **7 LLM providers** wired with per-model free-tier presets:
+  Groq, Gemini, OpenRouter, **Cerebras, Mistral, SambaNova, NVIDIA NIM** (v0.8.0).
+  Plus three opinionated router tier presets (`TIER_SPEED` /
+  `TIER_QUALITY` / `TIER_VOLUME`) via `build_tier_entries()`. Example:
+  [`examples/run_kol_tier_router.py`](examples/run_kol_tier_router.py).
 - LLM tool-use loop: `tool_use_loop` + `ToolUseNode` let the analyst invoke
   registered tools mid-decision. Example:
   [`examples/run_with_tools.py`](examples/run_with_tools.py).

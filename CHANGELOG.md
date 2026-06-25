@@ -5,6 +5,58 @@ All notable changes to `zetryn-trading` will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] — 2026-06-25
+
+Provider expansion: framework now ships with four additional
+OpenAI-compatible providers and three opinionated router tier presets.
+Triggered by a user question — "can all these providers be added?"
+(referring to the free-tier landscape: Cerebras, Mistral, SambaNova,
+NVIDIA NIM, etc.). Answer was yes, then proved with code.
+
+### Added
+- **4 new BASE_URL constants** in `zetryn.llm`:
+  `CEREBRAS_BASE_URL`, `MISTRAL_BASE_URL`, `SAMBANOVA_BASE_URL`,
+  `NVIDIA_NIM_BASE_URL`. Wired into `OpenAICompatibleClient` with
+  zero adapter changes — each provider is OpenAI-compatible.
+- **Per-model free-tier presets** in `PROVIDER_FREE_TIER_LIMITS`:
+  - Cerebras: 6 models (llama-3.3-70b, gpt-oss-120b, qwen-3, glm-4.5, etc.)
+  - Mistral: 5 models (mistral-large/small/codestral/pixtral/embed)
+  - SambaNova: 5 models (Llama-3.1-8B/70B/405B, 3.3-70B, Qwen2.5-72B)
+  - NVIDIA NIM: 6 models (DeepSeek R1/V3, Llama 3.3 70B, Nemotron, etc.)
+- **Three router tier presets** in `zetryn.llm`:
+  - `TIER_SPEED` — Cerebras (~2,600 tok/s) → Groq fallback. For
+    latency-critical sniper-style work.
+  - `TIER_QUALITY` — SambaNova 405B → Gemini → Groq. For deep reasoning
+    when latency tolerates 1-3s.
+  - `TIER_VOLUME` — OpenRouter `:free` → Gemini → Groq. For backtests
+    and high-throughput pipelines.
+- **`build_tier_entries(tier, clients_by_provider)`** helper — materialises
+  a tier spec list into `list[RouterEntry]`. Silently skips providers
+  the caller has no keys for, so tiers degrade gracefully (not error).
+- **`TierSpec` dataclass** — `{provider, model}` pair used by tier presets.
+- **`examples/run_kol_tier_router.py`** — end-to-end demo: build clients
+  per provider, materialise a tier, hand to `LLMRouter`, run KOL
+  confirmed-mode strategy. Switchable via `ZETRYN_TIER=speed|quality|volume`.
+- **17 new tests** in `tests/test_provider_expansion.py` covering BASE_URLs,
+  presets per provider, tier spec validity, `build_tier_entries()`
+  behaviour (graceful skip, full populate, empty input, router
+  integration), and backwards-compat for existing providers.
+
+### Backwards compatibility
+- All 215 existing tests still green. No breaking change to existing
+  API surface. New providers are purely additive.
+- Existing `get_free_tier_limit(provider, model)` continues to work for
+  Groq / Gemini / OpenRouter and now also resolves the four new providers.
+
+### Notes
+- All four new providers are confirmed OpenAI-compatible at their
+  `/v1/chat/completions` endpoints. No custom adapter needed.
+- For Hugging Face Inference and Cloudflare Workers AI (the two
+  remaining providers in the user's reference table that need
+  partial-adapter work), the framework's existing primitives still
+  support them via custom `LLMClient` implementations — those just
+  didn't make this release's scope.
+
 ## [0.7.0] — 2026-06-25
 
 KOL Copy-Trade gains a real AI mode. Ships K5 of the milestone breakdown.
