@@ -18,6 +18,7 @@ from .router import (
     get_free_tier_limit,
 )
 from .structured import structured_complete
+from .tool_use import ToolUseNode, ToolUseTrace, tool_use_loop
 from .types import (
     LLMError,
     LLMRateLimitError,
@@ -55,10 +56,13 @@ __all__ = [
     "ProviderConfig",
     "RouterEntry",
     "StructuredOutputError",
+    "ToolUseNode",
+    "ToolUseTrace",
     "ZetrynClient",
     "assistant",
     "get_free_tier_limit",
     "structured_complete",
     "system",
+    "tool_use_loop",
     "user",
 ]

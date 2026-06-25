@@ -200,6 +200,7 @@ class LLMRouter:
         model: str | None = None,
         temperature: float | None = None,
         json_mode: bool = False,
+        tools: list[dict] | None = None,
     ) -> LLMResult:
         last_error: Exception | None = None
         tried = 0
@@ -213,6 +214,7 @@ class LLMRouter:
                     model=model,
                     temperature=temperature,
                     json_mode=json_mode,
+                    tools=tools,
                 )
             except (LLMRateLimitError, NoKeysAvailableError) as exc:
                 entry.penalize(self._cooldown_s)

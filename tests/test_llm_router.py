@@ -37,6 +37,7 @@ class FakeClient:
         model: str | None = None,
         temperature: float | None = None,
         json_mode: bool = False,
+        tools: list[dict] | None = None,
     ) -> LLMResult:
         self.calls += 1
         if not self._responses:

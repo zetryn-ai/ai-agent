@@ -49,6 +49,7 @@ class OpenAICompatibleClient:
         model: str | None = None,
         temperature: float | None = None,
         json_mode: bool = False,
+        tools: list[dict] | None = None,
     ) -> LLMResult:
         cfg = self._config
         payload: dict = {
@@ -56,7 +57,11 @@ class OpenAICompatibleClient:
             "messages": messages,
             "temperature": cfg.temperature if temperature is None else temperature,
         }
-        if json_mode and cfg.supports_json_mode:
+        # json_mode and tool-calling are mutually exclusive at the API level.
+        if tools:
+            payload["tools"] = tools
+            payload["tool_choice"] = "auto"
+        elif json_mode and cfg.supports_json_mode:
             payload["response_format"] = {"type": "json_object"}
 
         url = f"{cfg.base_url.rstrip('/')}/chat/completions"
@@ -109,7 +114,9 @@ class OpenAICompatibleClient:
     @staticmethod
     def _parse(data: dict, model: str, latency_ms: float, rotations: int) -> LLMResult:
         try:
-            text = data["choices"][0]["message"]["content"] or ""
+            message = data["choices"][0]["message"]
+            text = message.get("content") or ""
+            tool_calls = list(message.get("tool_calls") or [])
         except (KeyError, IndexError, TypeError) as exc:
             raise LLMError(f"unexpected response shape: {exc}") from exc
         usage = data.get("usage") or {}
@@ -120,6 +127,7 @@ class OpenAICompatibleClient:
             prompt_tokens=usage.get("prompt_tokens"),
             completion_tokens=usage.get("completion_tokens"),
             key_rotations=rotations,
+            tool_calls=tool_calls,
             raw=data,
         )
 

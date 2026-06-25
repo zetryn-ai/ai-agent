@@ -23,7 +23,14 @@ def assistant(content: str) -> Message:
 
 @dataclass
 class LLMResult:
-    """Result of a single LLM completion."""
+    """Result of a single LLM completion.
+
+    ``tool_calls`` is populated when the model decides to invoke one or more
+    tools. Each entry follows the OpenAI tool-call shape:
+        {"id": str, "type": "function",
+         "function": {"name": str, "arguments": str (JSON)}}
+    Callers using `tool_use_loop` shouldn't need to read this directly.
+    """
 
     text: str
     model: str
@@ -31,6 +38,7 @@ class LLMResult:
     prompt_tokens: int | None = None
     completion_tokens: int | None = None
     key_rotations: int = 0
+    tool_calls: list[dict[str, Any]] = field(default_factory=list)
     raw: dict[str, Any] = field(default_factory=dict)
 
 

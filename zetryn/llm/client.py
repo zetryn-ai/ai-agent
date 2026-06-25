@@ -14,7 +14,14 @@ from .types import LLMResult, Message
 
 @runtime_checkable
 class LLMClient(Protocol):
-    """Minimal completion interface."""
+    """Minimal completion interface.
+
+    ``tools`` accepts a list of OpenAI function-calling specs (the same shape
+    `Tool.spec()` returns). When the model decides to call a tool, the
+    response's ``tool_calls`` field is populated and ``text`` may be empty.
+    Implementations that do not support tool-calling MAY ignore ``tools`` and
+    return a normal text completion.
+    """
 
     async def complete(
         self,
@@ -23,6 +30,7 @@ class LLMClient(Protocol):
         model: str | None = None,
         temperature: float | None = None,
         json_mode: bool = False,
+        tools: list[dict] | None = None,
     ) -> LLMResult: ...
 
     async def aclose(self) -> None: ...
