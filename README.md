@@ -352,14 +352,14 @@ reverse.
 
 ## Status
 
-**Maturity:** Alpha (v0.3.0) — actively developed, breaking changes possible
+**Maturity:** Alpha (v0.5.0) — actively developed, breaking changes possible
 between 0.x releases until the API stabilises.
 
 **Single source of truth for roadmap & milestone status:**
 [`docs/CAPABILITIES.md`](docs/CAPABILITIES.md) §6. The summary below is just
 a snapshot — the table over there is what gets updated on every release.
 
-What's built (v0.3.0):
+What's built (v0.5.0):
 
 - Core engine, LLM layer, tools, memory, observability, auth seam, backtest
 - Scanner v2 (AI-first, M8) with the learning loop closed —
@@ -368,7 +368,11 @@ What's built (v0.3.0):
 - Sniper with `rule` / `llm` / `hybrid` / `hybrid_audit` modes (M9)
 - Pre-P1 foundations: `KnowledgePack`, `LLMRouter` (multi-provider failover
   + per-model throttle), `ReflectiveNode`
+- **LLM tool-use loop** (v0.5.0): `tool_use_loop` + `ToolUseNode` let the
+  analyst invoke registered tools mid-decision. Example:
+  [`examples/run_with_tools.py`](examples/run_with_tools.py).
 - Latency bench at [`examples/bench_scanner_latency.py`](examples/bench_scanner_latency.py)
+  (supports `ZETRYN_BENCH_PROVIDER=router` for multi-provider comparison)
 
 Known limits:
 
@@ -379,8 +383,6 @@ Known limits:
   CAPABILITIES.md §5 "Reliability pattern".
 - Zetryn platform (hosted models, subscription auth) is **not yet live** —
   the seam is stubbed; production uses public providers with your own keys.
-- LLM tool-use loop is the next "small" feature on the list — see
-  CAPABILITIES.md §6 "What's next".
 
 ---
 

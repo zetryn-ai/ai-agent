@@ -5,6 +5,53 @@ All notable changes to `zetryn-trading` will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] — 2026-06-25
+
+LLM tool-use loop shipped. Capability #8 in the matrix moves from ⚠️ to ✅:
+the analyst can now invoke registered `Tool`s mid-decision using native
+OpenAI-compatible function calling, with the same safety guarantees the rest
+of the framework already enforces (bounded iterations, graceful tool failures,
+fallback contract on total LLM failure).
+
+### Added
+- **`tool_use_loop()`** (`zetryn.llm.tool_use`) — drives the call → execute →
+  feed-back → repeat conversation against any `LLMClient` and `ToolRegistry`.
+  Returns the final `LLMResult` plus a `ToolUseTrace` (iterations, every tool
+  call, truncation flag). `max_iterations` is mandatory and defaults to 6.
+- **`ToolUseNode`** — graph node wrapping the loop. Optional `schema=...`
+  parses the model's final text as Pydantic; with no schema it stores the raw
+  text. Same fallback contract as `LLMNode`: on LLM/schema failure, applies
+  `fallback_fn` and sets `<output_key>__llm_failed = True`.
+- **`LLMResult.tool_calls`** — new field carrying the OpenAI-shaped tool call
+  list when the model decides to invoke tools. Empty list when none requested.
+- **`examples/run_with_tools.py`** — end-to-end demo: analyst sees a token,
+  invokes `check_rug` and `get_smart_money_buys` on its own, returns a
+  structured `AnalystVerdict`. Stub LLM so no API key needed.
+- **`tests/test_tool_use.py`** — 11 cases covering the no-tools fast path,
+  the call+continue loop, tool failures fed back to the model, malformed
+  argument JSON, max-iteration truncation, schema parsing, and fallback paths.
+
+### Changed
+- **`LLMClient` protocol** — `complete()` accepts an optional `tools=[...]`
+  keyword. Implementations that don't support tools may ignore it. Backwards
+  compatible: existing fakes using `**kw` keep working; the one fake with an
+  explicit signature in tests (`test_llm_router.py`) gained the parameter.
+- **`OpenAICompatibleClient`** — forwards `tools` to the chat completions API,
+  parses `message.tool_calls` from the response. Mutually exclusive with
+  `json_mode` at the API level (matching OpenAI's contract).
+- **`LLMRouter`** — forwards `tools` transparently to the active entry, so
+  tool-use works through multi-provider failover with no extra wiring.
+- **`docs/CAPABILITIES.md`** — capability #8 marked ✅ with evidence links;
+  §6 "What's next" updated (both threads from v0.3.0 closed, new candidates
+  identified).
+- **`README` §Status** — bumped to v0.5.0 snapshot, lists the tool-use loop
+  as built and points at the new example.
+
+### Notes
+- LLM tool-use is opt-in: existing scanner/sniper graphs don't change. To
+  use it, instantiate a `ToolUseNode` with your `ToolRegistry` and add it to
+  your graph in place of (or alongside) an `LLMNode`.
+
 ## [0.4.0] — 2026-06-25
 
 Free-tier reliability pattern shipped as a working example and integration

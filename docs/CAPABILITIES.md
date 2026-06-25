@@ -20,7 +20,7 @@ disagrees with this document, this document wins.
 | 5 | Loss-pattern recognition from recorded outcomes | ✅ | [`zetryn/memory/reflective.py`](../zetryn/memory/reflective.py) (`Pattern`) | Numeric features bucketed by quartile, categorical features grouped by value. Emits patterns like `top10_pct = > 0.30: 3/4 losses (rate 75%, avg pnl -22%)`. |
 | 6 | Per-model throttle + auto-fallback across keys / providers | ✅ | [`zetryn/llm/router.py`](../zetryn/llm/router.py) (`LLMRouter`, `RouterEntry`, `get_free_tier_limit`) | Multi-provider failover wraps any number of `LLMClient`s and implements the same protocol. Per-entry `RateLimit` enforces RPM/RPD/TPM/TPD via sliding windows. Free-tier presets per-model for Groq, Gemini, and OpenRouter `:free` shared bucket. |
 | 7 | Persisting new knowledge learned at runtime | ✅ | [`zetryn/memory/store.py`](../zetryn/memory/store.py), [`zetryn/knowledge/pack.py`](../zetryn/knowledge/pack.py), [`zetryn/memory/reflective.py`](../zetryn/memory/reflective.py), [`strategies/agents/scanner.py`](../strategies/agents/scanner.py) | Static playbook via `KnowledgePack`; mutable per-run state via `MemoryStore`; outcomes auto-summarised back into the next run by `ReflectiveNode`. Wired end-to-end into the scanner via `build_scanner(..., decision_log=...)` — the analyst sees a `Lessons from recent decisions` system block before deciding. The learning loop is now closed. |
-| 8 | LLM-driven tool/skill invocation (function calling) | ⚠️ | [`zetryn/tools/`](../zetryn/tools/) (`Tool`, `ToolRegistry`) | `Tool` schema + safe-call (timeout, no-crash, OpenAI function-spec) exists. Rule nodes can already call tools directly. Missing: an LLM tool-use loop so the analyst can invoke tools mid-decision via the provider's native function-calling API. Tracked as a follow-up to F1–F3. |
+| 8 | LLM-driven tool/skill invocation (function calling) | ✅ | [`zetryn/llm/tool_use.py`](../zetryn/llm/tool_use.py) (`tool_use_loop`, `ToolUseNode`), [`zetryn/tools/`](../zetryn/tools/) | `LLMClient.complete()` accepts `tools=[...]` and surfaces `tool_calls` on `LLMResult`. `tool_use_loop` drives the conversation: call → execute → feed back → repeat, with a mandatory `max_iterations` budget. `ToolUseNode` wraps it as a graph node with optional schema validation and the same fallback contract as `LLMNode`. Example: [`examples/run_with_tools.py`](../examples/run_with_tools.py). |
 
 ---
 
@@ -211,16 +211,26 @@ P3 observability dashboard (Next.js) · P4 model improvement loop.
 
 ### What's next (concrete)
 
-Two open threads after v0.3.0, in no particular order:
+Both threads identified after v0.3.0 are now closed:
 
-1. **Free-tier reliability ceiling.** M8 acceptance #6 (p95 ≤ 5s) is met only
-   when running through `LLMRouter` with ≥2 providers. A single Groq key still
-   shows p95 ~11s under rate-limit variance. Documenting this pattern in
-   examples + recommending the router as default is the cheapest mitigation.
-2. **LLM tool-use loop** (capability #8). `Tool`/`ToolRegistry` primitives
-   ship today but the analyst cannot invoke them mid-decision. Wiring the
-   OpenAI/Anthropic function-calling loop into `LLMNode` is the natural next
-   "small" feature before the bigger M11/M13 items.
+- ✅ **Free-tier reliability** — shipped in v0.4.0 as `examples/run_with_router.py`,
+  the bench `router` mode, and 5 integration tests. The router is now the
+  documented production default.
+- ✅ **LLM tool-use loop** — shipped in v0.5.0 (capability #8 ✅).
+  `tool_use_loop` + `ToolUseNode` cover the OpenAI-compatible function-call
+  protocol; `LLMRouter` forwards `tools` transparently.
 
-Anything not listed here is either done or in the M13+ bucket. If you're
-wondering "what about X?" — check the table above first.
+After v0.5.0 the natural next candidates are:
+
+1. **A first concrete strategy** beyond Scanner/Sniper — e.g. KOL Copy-Trade
+   in [`strategies/agents/`](../strategies/agents/) — so the pattern of
+   composing Scanner + Sniper + tools is exercised end-to-end. This is
+   what unblocks the YAML loader idea (M13) by revealing real repeating
+   structure across 3 strategies.
+2. **M11 — Phase 2 LLM** (parallel specialists) once a paid provider is
+   in play; the framework already supports it via `AgentNode` sub-graphs.
+3. **Anthropic native adapter** for prompt caching — only worth doing once
+   the analyst prompt is large enough to matter (post-knowledge-pack growth).
+
+Anything not listed here is in the M13+ bucket. If you're wondering "what
+about X?" — check the table above first.
