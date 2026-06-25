@@ -31,9 +31,11 @@ def _pack(tmp_path: Path) -> KnowledgePack:
 # -- prompt factory level --------------------------------------------------
 
 
-def test_make_analyst_prompt_without_pack_returns_default(tmp_path: Path):
+def test_make_analyst_prompt_without_pack_behaves_like_default(tmp_path: Path):
+    """When no pack and no lessons are present, output equals analyst_prompt."""
     from strategies.nodes.analyst import analyst_prompt
-    assert make_analyst_prompt(None) is analyst_prompt
+    state = State(context=TradingContext(token=SAMPLE_TOKENS["GOOD"]))
+    assert make_analyst_prompt(None)(state) == analyst_prompt(state)
 
 
 def test_make_analyst_prompt_prepends_pack_blocks(tmp_path: Path):
@@ -60,10 +62,12 @@ def test_make_snipe_prompt_prepends_pack_blocks(tmp_path: Path):
     assert any(m["role"] == "user" for m in messages)
 
 
-def test_empty_pack_returns_default_prompt(tmp_path: Path):
+def test_empty_pack_behaves_like_default_prompt(tmp_path: Path):
+    """An empty pack adds no blocks; output equals analyst_prompt."""
     pack = KnowledgePack.from_dir(tmp_path)  # empty dir
     from strategies.nodes.analyst import analyst_prompt
-    assert make_analyst_prompt(pack) is analyst_prompt
+    state = State(context=TradingContext(token=SAMPLE_TOKENS["GOOD"]))
+    assert make_analyst_prompt(pack)(state) == analyst_prompt(state)
 
 
 # -- scanner end-to-end ----------------------------------------------------

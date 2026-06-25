@@ -108,6 +108,81 @@ async def test_client_rotates_key_on_429():
     await http.aclose()
 
 
+async def test_client_rotates_through_all_keys_until_one_succeeds():
+    """3-key pool, first two return 429, third recovers — pool order matters."""
+    seen_keys: list[str] = []
+    behaviour = {"k1": 429, "k2": 429, "k3": 200}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        token = request.headers["Authorization"].removeprefix("Bearer ")
+        seen_keys.append(token)
+        status = behaviour[token]
+        if status == 429:
+            return httpx.Response(429, json={"error": "rate"})
+        return _chat_response("recovered")
+
+    cfg = ProviderConfig("t", "http://test/v1", "m", key_envs=["K"], max_retries=5)
+    http = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    client = OpenAICompatibleClient(
+        cfg, key_pool=KeyPool(["k1", "k2", "k3"]), http_client=http
+    )
+
+    result = await client.complete([user("hi")])
+    assert result.text == "recovered"
+    # All three keys were tried in round-robin order before recovery.
+    assert seen_keys == ["k1", "k2", "k3"]
+    assert result.key_rotations == 2
+    await http.aclose()
+
+
+async def test_client_exhaust_all_keys_then_recovers_after_cooldown(monkeypatch):
+    """When every key is on cooldown, the client raises NoKeysAvailable
+    via the configured retry budget instead of hanging.
+    """
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(429, json={"error": "rate"})
+
+    cfg = ProviderConfig(
+        "t", "http://test/v1", "m", key_envs=["K"],
+        max_retries=2,  # 2 attempts → both fail
+        cooldown_s=999.0,  # effectively permanent for the test
+    )
+    http = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    client = OpenAICompatibleClient(
+        cfg, key_pool=KeyPool(["k1", "k2"], cooldown_s=999.0), http_client=http
+    )
+
+    with pytest.raises(LLMError, match="completion failed"):
+        await client.complete([user("hi")])
+    await http.aclose()
+
+
+async def test_client_succeeds_after_429_then_500_then_200():
+    """Mixed transient errors: rate-limit then server error then OK.
+    Verifies both 429 (key penalty + rotate) and 5xx (backoff + retry) paths.
+    """
+    sequence = [429, 500, 200]
+    idx = {"i": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        status = sequence[idx["i"]]
+        idx["i"] += 1
+        if status == 200:
+            return _chat_response("finally")
+        return httpx.Response(status, json={"error": "transient"})
+
+    cfg = ProviderConfig("t", "http://test/v1", "m", key_envs=["K"], max_retries=5)
+    http = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    client = OpenAICompatibleClient(
+        cfg, key_pool=KeyPool(["k1", "k2"]), http_client=http
+    )
+
+    result = await client.complete([user("hi")])
+    assert result.text == "finally"
+    assert result.key_rotations == 1  # only the 429 caused a rotation
+    await http.aclose()
+
+
 async def test_client_raises_on_4xx():
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(400, text="bad request")

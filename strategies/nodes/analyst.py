@@ -121,25 +121,43 @@ def analyst_prompt(state: State) -> list[Message]:
     return [system(_SYSTEM_PROMPT), user("Token fact sheet:\n" + "\n".join(facts))]
 
 
+_LESSONS_HEADER = (
+    "Lessons from recent decisions — use these to avoid repeating losing patterns. "
+    "The agent ran on the same data sources and these are real outcomes:"
+)
+
+
+def _lessons_block(state: State) -> Message | None:
+    """Return a system message with the reflection summary, or None if absent."""
+    text = state.scratch.get("lessons_text")
+    if not text or not isinstance(text, str):
+        return None
+    return system(f"{_LESSONS_HEADER}\n\n{text}")
+
+
 def make_analyst_prompt(
     pack: KnowledgePack | None = None,
 ) -> Callable[[State], list[Message]]:
-    """Return a prompt builder that prepends a knowledge pack's system blocks.
+    """Return a prompt builder that prepends a knowledge pack + lessons block.
 
-    When `pack` is None this behaves exactly like `analyst_prompt`. When a pack
-    is provided, every markdown block under `<pack>/system/` is injected as a
-    system message *before* the analyst's own instructions, so deployments can
-    layer their own playbook on top of the default analyst persona.
+    Layering order in the returned messages (top → bottom):
+      1. KnowledgePack `system_blocks()` — the deployment's static playbook
+         (rules, KOL whitelist, blacklists). Only present when ``pack`` is set.
+      2. Reflection lessons — a `ReflectiveNode` summary of recent losers,
+         injected dynamically when ``state.scratch["lessons_text"]`` is set.
+      3. Analyst's own system prompt + the per-token user fact sheet.
+
+    When neither layer is active, the result is identical to ``analyst_prompt``.
     """
-    if pack is None:
-        return analyst_prompt
-
-    pack_blocks = pack.system_blocks()
-    if not pack_blocks:
-        return analyst_prompt
+    pack_blocks: list[Message] = pack.system_blocks() if pack is not None else []
 
     def fn(state: State) -> list[Message]:
-        return pack_blocks + analyst_prompt(state)
+        messages: list[Message] = list(pack_blocks)
+        lessons = _lessons_block(state)
+        if lessons is not None:
+            messages.append(lessons)
+        messages.extend(analyst_prompt(state))
+        return messages
 
     return fn
 
