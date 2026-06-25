@@ -1,7 +1,7 @@
 # KOL Copy-Trade — Strategy Design
 
 **Date:** 2026-06-25
-**Status:** Approved — implementation in progress. Boundary tightened 2026-06-25 (framework defines + decides; bot fetches + executes). Decisions locked in §15. First release scope locked in §16.
+**Status:** K1-K4 shipped in **v0.6.0** (2026-06-25). K5-K8 pending. Boundary recap (§0.5) and locked decisions (§15, §16) remain authoritative.
 **Target milestone:** new strategy reference agent in `strategies/agents/kol_copytrade.py`
 **Foundations relied on:** F1 (`KnowledgePack`), F2 (`ReflectiveNode`), F3 (`LLMRouter`), tool-use loop (v0.5.0), `AgentNode`
 

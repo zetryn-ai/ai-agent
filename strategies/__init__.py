@@ -5,13 +5,17 @@ sample data. In production these typically live in the bot repo; here they
 demonstrate and test the framework against the ``trading`` contract.
 """
 
+from .agents.kol_copytrade import build_kol_copytrade
 from .agents.scanner import build_scanner
 from .agents.sniper import build_sniper
+from .kol_registry import KOLRegistry
 from .providers import SAMPLE_TOKENS, SampleProvider
 
 __all__ = [
+    "KOLRegistry",
     "SAMPLE_TOKENS",
     "SampleProvider",
+    "build_kol_copytrade",
     "build_scanner",
     "build_sniper",
 ]

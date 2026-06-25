@@ -305,3 +305,85 @@ class Decision(BaseModel):
     # Full analyst verdict (M8+). Populated by AI-first scanners; None for
     # hard-gate rejects and legacy/rule-only paths.
     analysis: FullAnalysis | None = None
+
+
+# -- KOL copy-trade strategy (v0.6.0) ----------------------------------------
+#
+# Schemas only. The framework defines the shape; the bot fetches and fills
+# every field. See docs/plans/2026-06-25-kol-copytrade-strategy.md §0.5
+# for the boundary contract.
+
+
+class KOLProfile(BaseModel):
+    """One KOL's historical performance, as the bot computes it offline.
+
+    Stored inside the bot's `KnowledgePack` under
+    `data/kol_whitelist.json -> wallets[<address>]`. The framework reads
+    these values to score / reject incoming copy-trade signals.
+    """
+
+    name: str = ""                              # human-friendly label
+    hit_rate: float = Field(ge=0, le=1, default=0.0)
+    avg_pnl_pct: float = 0.0
+    trades_30d: int = 0
+    exit_pattern: str = ""                      # e.g. "scales_out_50pct"
+    tier: Literal["S", "A", "B", "C"] = "C"
+    min_sol_to_copy: float = 0.0                # ignore KOL buys below this size
+
+
+class KOLBuyEvent(BaseModel):
+    """A KOL wallet just bought a token.
+
+    Built by the BOT from its event stream (Helius webhook, Cielo
+    subscription, custom indexer). The framework never produces one.
+    """
+
+    wallet: str
+    mint: str
+    sol_amount: float = Field(ge=0)
+    detected_at_ts: float                       # unix ts (bot's clock)
+    block_age_seconds: float = Field(ge=0)      # how stale this signal is
+
+
+class KOLCopyTradeConfig(BaseModel):
+    """Tunables for the copy-trade strategy.
+
+    Per-deployment overridable; the formula in the `sizing` node reads
+    these without touching code. Defaults are placeholders — tune from
+    real outcome data.
+    """
+
+    # safety / liquidity gates (mirror SniperConfig defaults)
+    min_liquidity_usd: float = 3_000
+    min_volume_1h: float = 5_000
+    max_top10_pct: float = 0.6
+    max_bundler_count: int = 3
+    max_sniper_count: int = 10
+
+    # KOL whitelist gates
+    min_kol_tier: Literal["S", "A", "B", "C"] = "A"
+    min_kol_hit_rate: float = Field(ge=0, le=1, default=0.40)
+    max_signal_age_seconds: float = 30.0        # reject if signal is too stale
+    kol_cooldown_seconds: float = 60.0          # min gap between copies of same KOL
+
+    # sizing formula tunables (sizing = base × (1 + 2·kol_conf) × token_safety)
+    base_size: float = 1.0
+    max_size: float = 5.0
+    kol_confidence_floor: float = 0.40          # hit_rate below this → conf=0
+    kol_confidence_ceiling: float = 0.70        # hit_rate at/above this → conf=0.30
+    top10_penalty_start: float = 0.20           # penalise size when top10 > this
+
+    decision_mode: Literal["rule", "confirmed", "audit"] = "rule"
+
+
+@dataclass
+class KOLContext:
+    """What the bot hands `build_kol_copytrade(...)` for one decision."""
+
+    event: KOLBuyEvent
+    token: TokenInput
+    config: KOLCopyTradeConfig = field(default_factory=KOLCopyTradeConfig)
+    # When this KOL was last copied (bot-tracked; None = no recent copy).
+    # Used by `kol_quality` to enforce `config.kol_cooldown_seconds`.
+    last_copy_ts: float | None = None
+    positions: dict[str, Any] = field(default_factory=dict)
