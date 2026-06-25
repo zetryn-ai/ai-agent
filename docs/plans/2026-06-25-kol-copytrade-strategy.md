@@ -1,7 +1,9 @@
 # KOL Copy-Trade — Strategy Design
 
 **Date:** 2026-06-25
-**Status:** K1-K4 shipped in **v0.6.0** (2026-06-25). K5-K8 pending. Boundary recap (§0.5) and locked decisions (§15, §16) remain authoritative.
+**Status:** K1-K5 shipped through **v0.7.0** (2026-06-25). K6-K8 pending. Boundary recap (§0.5) and locked decisions (§15, §16) remain authoritative.
+
+**v0.7.0 update (K5 shipped):** `confirmed` mode now wires an LLM analyst between `fast_market` and `sizing`. The analyst can veto the buy (`approve=False`) or scale size via `size_multiplier` in [0, 1.5]. `KOLAnalystVerdict` is the structured output schema. Verified end-to-end against real Groq Llama 3.3 70b in `examples/run_kol_copytrade.py` with `ZETRYN_KOL_USE_GROQ=1`.
 **Target milestone:** new strategy reference agent in `strategies/agents/kol_copytrade.py`
 **Foundations relied on:** F1 (`KnowledgePack`), F2 (`ReflectiveNode`), F3 (`LLMRouter`), tool-use loop (v0.5.0), `AgentNode`
 

@@ -314,6 +314,44 @@ class Decision(BaseModel):
 # for the boundary contract.
 
 
+class KOLAnalystVerdict(BaseModel):
+    """LLM analyst's verdict in the KOL copy-trade `confirmed` mode.
+
+    The analyst sees a token that already passed all hard rules + the
+    KOL whitelist check. Its job is NOT to decide "should we buy" (the
+    rules implied yes) — it's to detect qualitative red flags the rules
+    cannot see, and to nudge size up or down based on how much
+    confluence it observes across the fact sheet.
+    """
+
+    approve: bool = Field(
+        description="True = proceed with the rule-sized buy. False = skip "
+        "(rules would have bought; the analyst is vetoing on qualitative "
+        "concerns the rule layer cannot encode)."
+    )
+    size_multiplier: float = Field(
+        ge=0.0, le=1.5,
+        description="Multiplier applied to the rule-derived size. 1.0 = full "
+        "rule size. 0.5 = half (less confident). 1.5 = ceiling boost (strong "
+        "confluence). Ignored when approve=False.",
+    )
+    confidence: float = Field(
+        ge=0.0, le=1.0,
+        description="How confident the analyst is in the verdict (independent "
+        "of approve direction).",
+    )
+    concerns: list[str] = Field(
+        default_factory=list,
+        description="Short phrases naming qualitative red flags. Empty list "
+        "means no concerns. Surfaced into Decision.reasons for auditability.",
+    )
+    reasoning: str = Field(
+        default="",
+        description="One- or two-sentence synthesis of why the analyst "
+        "approved / vetoed / adjusted size.",
+    )
+
+
 class KOLProfile(BaseModel):
     """One KOL's historical performance, as the bot computes it offline.
 

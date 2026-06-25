@@ -1,21 +1,30 @@
-"""Pure-rule nodes for the KOL copy-trade strategy.
+"""Nodes for the KOL copy-trade strategy.
 
-All decisions here are deterministic; no LLM call. They mirror the
-sniper's fast-path style (set ``state.output`` and ``goto=__end__`` on
-rejection) so the graph can short-circuit without the analyst.
+The rule nodes (`fast_safety`, `kol_quality`, `fast_market`, `sizing`)
+are deterministic; no LLM call. They mirror the sniper's fast-path
+style (set ``state.output`` and ``goto=__end__`` on rejection) so the
+graph can short-circuit without the analyst.
+
+In ``confirmed`` mode the graph also runs an LLM analyst node
+(``kol_analyst_prompt`` + ``neutral_kol_verdict``) between
+``fast_market`` and ``sizing``. The analyst can veto the buy entirely
+(approve=False → action=skip) or nudge size up/down via
+``size_multiplier`` — the sizing node respects the verdict.
 
 Boundary recap: the framework owns the *rules*; the bot owns the
 *data and state*. ``last_copy_ts`` (for cooldown), KOL whitelist
-contents, and token enrichment are all bot-supplied via
-``KOLContext`` and the injected ``KOLRegistry``.
+contents, token enrichment, and any tool implementations the analyst
+may invoke are all bot-supplied via ``KOLContext`` and the injected
+``KOLRegistry``.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable
 
-from trading.schemas import Decision
+from trading.schemas import Decision, KOLAnalystVerdict
 from zetryn.core import Command, State
+from zetryn.llm import Message, system, user
 
 from ..kol_registry import KOLRegistry
 
@@ -170,17 +179,115 @@ def fast_market(state: State) -> Command | None:
     return None
 
 
-# -- node 4: sizing + buy ----------------------------------------------------
+# -- node 4 (optional, confirmed mode): LLM analyst -------------------------
+
+
+def kol_analyst_prompt(state: State) -> list[Message]:
+    """Build the analyst prompt for `confirmed` mode.
+
+    The token has already passed every hard rule + the KOL whitelist
+    check. The analyst is NOT deciding "buy or not from scratch" — it is
+    looking for qualitative red flags the rule layer cannot encode, and
+    nudging size based on observed confluence.
+    """
+    ctx = state.context
+    ev = ctx.event
+    t = ctx.token
+    profile = state.scratch["kol_profile"]   # set by kol_quality
+
+    m, h, c, a, w, s = (
+        t.market, t.holders, t.contract, t.activity, t.wallets, t.social
+    )
+    tw = s.twitter
+    facts: list[str] = [
+        f"KOL: {profile.name or ev.wallet[:8]} (tier {profile.tier}, "
+        f"hit_rate {profile.hit_rate:.2f}, avg_pnl {profile.avg_pnl_pct:+.0%}, "
+        f"exit_pattern={profile.exit_pattern or 'unknown'})",
+        f"KOL just bought {ev.sol_amount} SOL of {t.symbol} "
+        f"({ev.block_age_seconds:.1f}s ago)",
+        "",
+        "TOKEN — Market",
+        f"  mcap=${m.mcap:,.0f}  liquidity=${m.liquidity_usd:,.0f}  "
+        f"vol_1h=${m.volume_1h:,.0f}  age={m.age_seconds or 0:.0f}s",
+        "TOKEN — Activity (5m)",
+        f"  vol_5m=${a.volume_5m_usd:,.0f}  buys={a.buys_5m}  sells={a.sells_5m}  "
+        f"buy_ratio={a.buy_ratio_5m:.2f}",
+        "TOKEN — Holders",
+        f"  count={h.count}  top10={h.top10_pct:.0%}  dev={h.dev_pct:.0%}",
+        "TOKEN — Contract",
+        f"  honeypot={c.is_honeypot}  bundled={c.bundled_supply}  "
+        f"dev_rug={c.dev_rug_history}  lp_burned={c.lp_burned}  lp_locked={c.lp_locked}",
+        "TOKEN — Wallet intel",
+        f"  smart_buys={w.smart_wallet_buys}  kol_count={w.kol_wallet_count}  "
+        f"snipers={w.sniper_wallet_count}  bundlers={w.bundler_wallet_count}",
+        "TOKEN — Social",
+        f"  twitter @{tw.handle or '?'}: followers={tw.followers}  "
+        f"mention_growth={tw.mention_growth_pct:+.0f}%  velocity={tw.velocity_tpm:.1f}tpm  "
+        f"sentiment={tw.sentiment or 'unknown'}",
+        f"  kol_buying_5m={s.kol_count_5m}",
+    ]
+
+    return [
+        system(
+            "You are a senior memecoin trade auditor. A KOL has just made a buy "
+            "on Solana, and a rule-based filter has already approved both the "
+            "KOL's quality and the token's safety + market structure. Your job "
+            "is to second-guess that approval ONLY on qualitative concerns the "
+            "rules cannot encode:\n"
+            "- Is the KOL's tier / hit_rate consistent with their exit pattern? "
+            "  An S-tier with a 'dumps_into_followers' pattern is more dangerous "
+            "  than a B-tier with 'scales_out_50pct'.\n"
+            "- Does the on-chain confluence support the KOL signal? Smart buys + "
+            "  KOL count + positive buy_ratio + organic social growth = strong "
+            "  confluence. KOL alone with no other confirmation = weaker.\n"
+            "- Are there subtle red flags (bundlers > 0 but under the rule cap, "
+            "  dev_pct unusual, social velocity dropping)?\n"
+            "\n"
+            "Output JSON matching KOLAnalystVerdict:\n"
+            "- approve=True with size_multiplier 0.8-1.2 by default if nothing alarms you\n"
+            "- approve=True with size_multiplier 1.3-1.5 only on strong multi-aspect confluence\n"
+            "- approve=True with size_multiplier 0.3-0.7 if you see soft concerns but no veto\n"
+            "- approve=False ONLY if you see something concretely wrong that the rules missed\n"
+            "List concerns as short phrases. Reasoning is one or two sentences."
+        ),
+        user("Fact sheet:\n" + "\n".join(facts)),
+    ]
+
+
+def neutral_kol_verdict(state: State, exc: Exception) -> KOLAnalystVerdict:
+    """Conservative fallback when the analyst LLM is unavailable.
+
+    Defaults to approve=True (rules already passed) with size_multiplier=1.0
+    so we don't punish the trade for an infrastructure failure — but we flag
+    `llm_failed` downstream so the caller can demote in their own logic if
+    they prefer to skip on LLM outages.
+    """
+    return KOLAnalystVerdict(
+        approve=True,
+        size_multiplier=1.0,
+        confidence=0.0,
+        concerns=["analyst LLM unavailable"],
+        reasoning=f"LLM unavailable ({type(exc).__name__}); deferring to rule decision.",
+    )
+
+
+# -- node 5: sizing + buy (terminal) -----------------------------------------
 
 
 def sizing(state: State) -> None:
     """Compute final size and emit the buy Decision (terminal rule node).
 
     Formula (parameters from KOLCopyTradeConfig):
-        kol_conf = clamp((hit_rate - floor) / (ceiling - floor), 0, 1)
-        kol_mult = 1 + 2 * kol_conf                       # 1.0 .. 3.0
-        top10_pen = 1 - max(0, top10_pct - penalty_start) # 1.0 .. ~0.4
-        size = clamp(base_size * kol_mult * top10_pen, 0, max_size)
+        kol_conf  = clamp((hit_rate - floor) / (ceiling - floor), 0, 1)
+        kol_mult  = 1 + 2 * kol_conf                          # 1.0 .. 3.0
+        top10_pen = 1 - max(0, top10_pct - penalty_start)     # 1.0 .. ~0.4
+        rule_size = clamp(base_size * kol_mult * top10_pen, 0, max_size)
+        size      = clamp(rule_size * analyst_size_multiplier, 0, max_size)
+
+    `analyst_size_multiplier` defaults to 1.0 when no analyst ran (rule mode).
+    In `confirmed` mode the LLM verdict can:
+      - approve=False → action=skip (size=None, ignored)
+      - approve=True + multiplier in [0, 1.5] → scale the rule size
     """
     cfg = state.context.config
     h = state.context.token.holders
@@ -194,20 +301,61 @@ def sizing(state: State) -> None:
     top10_pen = 1.0 - max(0.0, h.top10_pct - cfg.top10_penalty_start)
     top10_pen = max(0.0, min(1.0, top10_pen))
 
-    size = cfg.base_size * kol_mult * top10_pen
-    size = max(0.0, min(size, cfg.max_size))
+    rule_size = cfg.base_size * kol_mult * top10_pen
+    rule_size = max(0.0, min(rule_size, cfg.max_size))
+
+    # Read the analyst verdict if one was produced (confirmed mode).
+    verdict: KOLAnalystVerdict | None = state.scratch.get("kol_analyst")
+    llm_failed = bool(state.scratch.get("kol_analyst__llm_failed", False))
+
+    if verdict is not None and not verdict.approve:
+        # Analyst veto wins — skip the trade even though rules approved.
+        state.output = Decision(
+            action="skip",
+            confidence=verdict.confidence,
+            reasons=[
+                f"KOL {profile.name or 'unknown'} (tier {profile.tier}, "
+                f"hit_rate {profile.hit_rate:.2f})",
+                f"analyst veto: {verdict.reasoning}",
+                *(f"concern: {c}" for c in verdict.concerns),
+            ],
+            flags={"rug_risk": False, "llm_failed": llm_failed, "analyst_veto": True},
+            meta={"run_id": state.run_id, "latency_ms": _latency_ms(state)},
+        )
+        return
+
+    size_mult = verdict.size_multiplier if verdict is not None else 1.0
+    size = max(0.0, min(rule_size * size_mult, cfg.max_size))
+
+    base_conf = 0.5 + 0.5 * kol_conf
+    confidence = base_conf if verdict is None else round((base_conf + verdict.confidence) / 2, 3)
+
+    reasons = [
+        f"KOL {profile.name or 'unknown'} (tier {profile.tier}, "
+        f"hit_rate {profile.hit_rate:.2f})",
+        f"size {size:.4f} = base {cfg.base_size} × "
+        f"kol_mult {kol_mult:.2f} × top10_pen {top10_pen:.2f}"
+        + (f" × analyst×{size_mult:.2f}" if verdict is not None else ""),
+    ]
+    if verdict is not None:
+        reasons.append(f"analyst: {verdict.reasoning}")
+        for c in verdict.concerns:
+            reasons.append(f"concern: {c}")
+
+    scores = {
+        "kol_confidence": round(kol_conf, 3),
+        "top10_penalty": round(top10_pen, 3),
+    }
+    if verdict is not None:
+        scores["analyst_size_multiplier"] = round(size_mult, 3)
+        scores["analyst_confidence"] = round(verdict.confidence, 3)
 
     state.output = Decision(
         action="buy",
-        confidence=round(0.5 + 0.5 * kol_conf, 3),  # 0.5..1.0
+        confidence=round(confidence, 3),
         size=round(size, 4),
-        scores={"kol_confidence": round(kol_conf, 3), "top10_penalty": round(top10_pen, 3)},
-        reasons=[
-            f"KOL {profile.name or 'unknown'} (tier {profile.tier}, "
-            f"hit_rate {profile.hit_rate:.2f})",
-            f"size {size:.4f} = base {cfg.base_size} × "
-            f"kol_mult {kol_mult:.2f} × top10_pen {top10_pen:.2f}",
-        ],
-        flags={"rug_risk": False, "llm_failed": False},
+        scores=scores,
+        reasons=reasons,
+        flags={"rug_risk": False, "llm_failed": llm_failed},
         meta={"run_id": state.run_id, "latency_ms": _latency_ms(state)},
     )

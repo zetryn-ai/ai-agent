@@ -1,4 +1,4 @@
-"""Example: KOL Copy-Trade strategy end-to-end (rule mode, v0.6.0).
+"""Example: KOL Copy-Trade strategy end-to-end.
 
 Simulates a bot's event loop:
   1. A KOL buy event arrives.
@@ -6,14 +6,23 @@ Simulates a bot's event loop:
   3. Bot builds KOLContext and calls build_kol_copytrade.run(...).
   4. Bot reads Decision and would execute (or not).
 
-Uses a throwaway KnowledgePack containing one whitelisted KOL. No LLM,
-no API keys — the rule-mode path is fully deterministic.
+Two modes — switch via env var:
+  (default)                                  rule mode, sub-ms, no LLM call
+  ZETRYN_KOL_USE_GROQ=1                      confirmed mode with real Groq LLM
+                                             analyst veto + size_multiplier
+  ZETRYN_GROQ_MODEL=llama-3.3-70b-versatile  optional, default shown
+
+The confirmed-mode path is what makes "AI Agent" in the brand
+non-empty for the copy-trade strategy: the LLM sees the full fact
+sheet AFTER the rules approved, and can veto qualitatively or scale
+size up/down based on observed confluence.
 """
 
 from __future__ import annotations
 
 import asyncio
 import json
+import os
 import pathlib
 import sys
 import tempfile
@@ -25,6 +34,7 @@ from trading import KOLBuyEvent, KOLContext, KOLCopyTradeConfig, TokenInput
 from trading.schemas import ContractData, HolderData, MarketData, WalletIntel
 from zetryn.core import State
 from zetryn.knowledge import KnowledgePack
+from zetryn.llm import GROQ_BASE_URL, OpenAICompatibleClient, ProviderConfig
 
 
 def _seed_pack(root: pathlib.Path) -> None:
@@ -87,12 +97,64 @@ async def _decide(graph, ctx: KOLContext, label: str) -> None:
     print(f"  trace     : {nodes}")
 
 
+def _load_env_file() -> None:
+    env_file = pathlib.Path(__file__).resolve().parent.parent / ".env"
+    if not env_file.is_file():
+        return
+    for line in env_file.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+def _discover_keys(prefix: str) -> list[str]:
+    keys = [prefix] if prefix in os.environ else []
+    i = 1
+    while f"{prefix}_{i}" in os.environ:
+        keys.append(f"{prefix}_{i}")
+        i += 1
+    return keys
+
+
+def _build_groq_client():
+    _load_env_file()
+    keys = _discover_keys("GROQ_API_KEY")
+    if not keys:
+        print("WARN: ZETRYN_KOL_USE_GROQ=1 but no GROQ_API_KEY[_N] found. "
+              "Falling back to rule mode.")
+        return None, None
+    model = os.environ.get("ZETRYN_GROQ_MODEL", "llama-3.3-70b-versatile")
+    client = OpenAICompatibleClient(ProviderConfig(
+        name="groq", base_url=GROQ_BASE_URL, model=model,
+        key_envs=keys, timeout_s=30.0,
+    ))
+    return client, model
+
+
 async def main() -> None:
     with tempfile.TemporaryDirectory(prefix="zetryn-kol-") as tmp:
         root = pathlib.Path(tmp)
         _seed_pack(root)
         pack = KnowledgePack.from_dir(root)
-        kol_copytrade = build_kol_copytrade(pack)
+
+        use_groq = os.environ.get("ZETRYN_KOL_USE_GROQ") == "1"
+        llm = None
+        if use_groq:
+            llm, model = _build_groq_client()
+            if llm is not None:
+                print(f"Mode: confirmed (LLM analyst via Groq {model})")
+                kol_copytrade = build_kol_copytrade(
+                    pack, mode="confirmed", llm_client=llm, model=model,
+                )
+            else:
+                print("Mode: rule (Groq fallback)")
+                kol_copytrade = build_kol_copytrade(pack)
+        else:
+            print("Mode: rule (no LLM call). Set ZETRYN_KOL_USE_GROQ=1 to "
+                  "try confirmed mode with real Groq.")
+            kol_copytrade = build_kol_copytrade(pack)
 
         # 1) Healthy signal from a trusted S-tier KOL → BUY
         await _decide(
@@ -177,6 +239,9 @@ async def main() -> None:
             ),
             "6. deployment override: stricter than pack floor",
         )
+
+        if llm is not None:
+            await llm.aclose()
 
 
 if __name__ == "__main__":
