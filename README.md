@@ -352,24 +352,27 @@ reverse.
 
 ## Status
 
-**Maturity:** Alpha (v0.5.0) — actively developed, breaking changes possible
+**Maturity:** Alpha (v0.6.0) — actively developed, breaking changes possible
 between 0.x releases until the API stabilises.
 
 **Single source of truth for roadmap & milestone status:**
 [`docs/CAPABILITIES.md`](docs/CAPABILITIES.md) §6. The summary below is just
 a snapshot — the table over there is what gets updated on every release.
 
-What's built (v0.5.0):
+What's built (v0.6.0):
 
 - Core engine, LLM layer, tools, memory, observability, auth seam, backtest
-- Scanner v2 (AI-first, M8) with the learning loop closed —
-  `build_scanner(..., decision_log=...)` injects past loss patterns into the
-  analyst system prompt every run
-- Sniper with `rule` / `llm` / `hybrid` / `hybrid_audit` modes (M9)
+- **Three reference strategies in `strategies/agents/`:**
+  - Scanner v2 (AI-first, M8) — general classifier, learning loop closed via
+    `build_scanner(..., decision_log=...)`
+  - Sniper (M9) — `rule` / `llm` / `hybrid` / `hybrid_audit` modes
+  - **KOL Copy-Trade (v0.6.0)** — first strategy with an explicit entry
+    hypothesis. Consumes `KOLContext`, returns sized buy decisions.
+    Example: [`examples/run_kol_copytrade.py`](examples/run_kol_copytrade.py)
 - Pre-P1 foundations: `KnowledgePack`, `LLMRouter` (multi-provider failover
   + per-model throttle), `ReflectiveNode`
-- **LLM tool-use loop** (v0.5.0): `tool_use_loop` + `ToolUseNode` let the
-  analyst invoke registered tools mid-decision. Example:
+- LLM tool-use loop: `tool_use_loop` + `ToolUseNode` let the analyst invoke
+  registered tools mid-decision. Example:
   [`examples/run_with_tools.py`](examples/run_with_tools.py).
 - Latency bench at [`examples/bench_scanner_latency.py`](examples/bench_scanner_latency.py)
   (supports `ZETRYN_BENCH_PROVIDER=router` for multi-provider comparison)

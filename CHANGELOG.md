@@ -5,6 +5,57 @@ All notable changes to `zetryn-trading` will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] — 2026-06-25
+
+First strategy reference agent beyond Scanner/Sniper: **KOL Copy-Trade**
+(`rule` mode). Ships K1-K4 of the milestone breakdown in
+`docs/plans/2026-06-25-kol-copytrade-strategy.md`. `confirmed` (tool-use)
+and `audit` modes follow in v0.7.0+; integration with `ReflectiveNode`
+follows in v0.8.0.
+
+### Added
+- **Schemas** in `trading/schemas.py`: `KOLProfile`, `KOLBuyEvent`,
+  `KOLCopyTradeConfig`, `KOLContext`. Re-exported from `trading`.
+- **`strategies.KOLRegistry`** — typed read-only view over a
+  `KnowledgePack`'s `data/kol_whitelist.json`. Exposes `get(wallet)`,
+  `is_known(wallet)`, `passes_global_floor(profile)`, plus the
+  pack-wide `min_tier` / `min_hit_rate`. Graceful when the pack has
+  no whitelist (empty registry, not a crash).
+- **`strategies/nodes/kol_nodes.py`** — pure-rule nodes:
+  `fast_safety` (abort on dangerous contract), `make_kol_quality`
+  (factory binding a `KOLRegistry`; enforces whitelist + pack floor +
+  deployment-config floor + KOL min buy size + signal staleness +
+  cooldown), `fast_market` (liquidity / volume / top10 / bundler /
+  sniper gates), `sizing` (formula reads all tunables from
+  `KOLCopyTradeConfig`).
+- **`strategies.build_kol_copytrade(pack | registry=...)`** —
+  compiled graph: `fast_safety → kol_quality → fast_market → sizing →
+  END`. Re-exported from `strategies`.
+- **Example** `examples/run_kol_copytrade.py` — six realistic scenarios
+  (trusted KOL buy, unknown wallet, stale signal, honeypot override,
+  cooldown, deployment override). Stub-only; no API key needed.
+- **Tests**: `tests/test_kol_schemas_registry.py` (14 cases),
+  `tests/test_kol_nodes.py` (19 cases), `tests/test_kol_copytrade.py`
+  (10 cases). Suite is now 205 cases, all green.
+- **Design doc**: `docs/plans/2026-06-25-kol-copytrade-strategy.md`
+  captures the strategy hypothesis, boundary recap, schemas, graph,
+  decisions §15, and phase breakdown §16.
+
+### Changed
+- **`README` §Status** — bumped to v0.6.0; reframed as "three reference
+  agents" (Scanner / Sniper / KOL Copy-Trade) with example links.
+- **`docs/CAPABILITIES.md` §6 Roadmap** — adds K (v0.6.0) row plus
+  reliability and tool-use rows for v0.4.0 / v0.5.0; "What's next"
+  reset to K5 (confirmed mode), K7 (reflective integration), and a
+  fourth-strategy candidate as the natural next thread.
+
+### Notes
+- Boundary held tight: framework defines schemas, runs the decision
+  graph, returns a `Decision`. The bot subscribes to KOL events,
+  enriches `TokenInput`, maintains `kol_whitelist.json`, tracks
+  cooldown state (`last_copy_ts`), and executes. No external data
+  fetcher landed inside the framework.
+
 ## [0.5.0] — 2026-06-25
 
 LLM tool-use loop shipped. Capability #8 in the matrix moves from ⚠️ to ✅:
