@@ -11,6 +11,13 @@ In ``confirmed`` mode the graph also runs an LLM analyst node
 (approve=False → action=skip) or nudge size up/down via
 ``size_multiplier`` — the sizing node respects the verdict.
 
+In ``audit`` mode (K6) the graph runs rule sizing first (sub-ms decide
+returned to the bot), then fires a fire-and-forget LLM audit task
+that lands in ``state.scratch["kol_audit_task"]``. The bot can ``await``
+the task later and write the verdict to ``DecisionLog`` for offline
+tuning — the hot path is never blocked. Mirrors the sniper's
+``hybrid_audit`` pattern.
+
 Boundary recap: the framework owns the *rules*; the bot owns the
 *data and state*. ``last_copy_ts`` (for cooldown), KOL whitelist
 contents, token enrichment, and any tool implementations the analyst
@@ -20,11 +27,14 @@ may invoke are all bot-supplied via ``KOLContext`` and the injected
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable
 
 from trading.schemas import Decision, KOLAnalystVerdict
 from zetryn.core import Command, State
-from zetryn.llm import Message, system, user
+from zetryn.knowledge import KnowledgePack
+from zetryn.llm import LLMClient, Message, system, user
+from zetryn.llm.structured import structured_complete
 
 from ..kol_registry import KOLRegistry
 
@@ -378,3 +388,123 @@ def sizing(state: State) -> None:
         flags={"rug_risk": False, "llm_failed": llm_failed},
         meta={"run_id": state.run_id, "latency_ms": _latency_ms(state)},
     )
+
+
+# -- node 6 (optional, audit mode): async LLM second-opinion ----------------
+
+
+def kol_audit_prompt(state: State) -> list[Message]:
+    """Build the audit prompt — runs AFTER the rule-only sizing has set
+    state.output. The auditor is reviewing a decision, not making one.
+    """
+    ctx = state.context
+    ev = ctx.event
+    t = ctx.token
+    profile = state.scratch["kol_profile"]   # set by kol_quality
+    d: Decision = state.output
+
+    m, h, c, a, w, s = (
+        t.market, t.holders, t.contract, t.activity, t.wallets, t.social
+    )
+    tw = s.twitter
+    facts: list[str] = [
+        f"DECISION (already returned to bot): action={d.action} size={d.size} "
+        f"confidence={d.confidence}",
+        f"Rule reasons: {'; '.join(d.reasons)}",
+        "",
+        f"KOL: {profile.name or ev.wallet[:8]} (tier {profile.tier}, "
+        f"hit_rate {profile.hit_rate:.2f}, exit_pattern={profile.exit_pattern or '?'})",
+        f"KOL bought {ev.sol_amount} SOL of {t.symbol} "
+        f"({ev.block_age_seconds:.1f}s ago)",
+        "",
+        "TOKEN snapshot",
+        f"  market: mcap=${m.mcap:,.0f} liq=${m.liquidity_usd:,.0f} "
+        f"vol_1h=${m.volume_1h:,.0f}",
+        f"  activity 5m: buys={a.buys_5m} sells={a.sells_5m} "
+        f"buy_ratio={a.buy_ratio_5m:.2f}",
+        f"  holders: count={h.count} top10={h.top10_pct:.0%} dev={h.dev_pct:.0%}",
+        f"  contract: bundled={c.bundled_supply} dev_rug={c.dev_rug_history} "
+        f"lp_burned={c.lp_burned} lp_locked={c.lp_locked}",
+        f"  wallets: smart_buys={w.smart_wallet_buys} kol_count={w.kol_wallet_count} "
+        f"snipers={w.sniper_wallet_count} bundlers={w.bundler_wallet_count}",
+        f"  social: tw_followers={tw.followers} "
+        f"mention_growth={tw.mention_growth_pct:+.0f}% "
+        f"velocity={tw.velocity_tpm:.1f}tpm kol_buying_5m={s.kol_count_5m}",
+    ]
+
+    return [
+        system(
+            "You are a memecoin trading auditor reviewing a KOL copy-trade "
+            "decision a rule-based bot ALREADY made. The trade is already "
+            "executed (or about to be) — your verdict cannot stop it. Your "
+            "job is to flag disagreement so the bot can learn:\n"
+            "- Do you AGREE with the action and size?\n"
+            "- What concrete concerns did the rule layer miss?\n"
+            "Be honest. Disagree when warranted — this audit informs future "
+            "rule tuning, NOT this trade. Output JSON matching the schema."
+        ),
+        user("Audit fact sheet:\n" + "\n".join(facts)),
+    ]
+
+
+async def _run_kol_audit(
+    client: LLMClient,
+    messages: list[Message],
+    model: str | None,
+) -> KOLAnalystVerdict:
+    """Background coroutine — call the LLM, parse to KOLAnalystVerdict.
+
+    Errors are swallowed into a flagged verdict so the bg task always
+    completes — must never raise into the event loop and crash the bot.
+    """
+    try:
+        return await structured_complete(
+            client, messages, KOLAnalystVerdict, model=model
+        )
+    except Exception as exc:  # noqa: BLE001 — bg task must not propagate
+        return KOLAnalystVerdict(
+            approve=False,
+            size_multiplier=0.0,
+            confidence=0.0,
+            concerns=[f"audit_failed: {type(exc).__name__}"],
+            reasoning=str(exc)[:200],
+        )
+
+
+def make_kol_audit_dispatch(
+    client: LLMClient,
+    *,
+    model: str | None = None,
+    knowledge_pack: KnowledgePack | None = None,
+):
+    """Build the audit-dispatch node for KOL copy-trade audit mode.
+
+    The decision is already in state.output (set by the sizing node).
+    This node fires a background task that the bot can ``await`` later
+    to get the audit verdict — typically writing it to DecisionLog for
+    offline analysis. The hot path is NOT blocked.
+
+    Task handle lands in ``state.scratch["kol_audit_task"]``.
+
+    When ``knowledge_pack`` is provided, its system blocks are prepended
+    to the audit prompt so the auditor sees the deployment playbook too.
+    """
+    pack_blocks: list[Message] = (
+        knowledge_pack.system_blocks() if knowledge_pack is not None else []
+    )
+
+    def kol_audit_dispatch(state: State) -> None:
+        # Only audit actual buys — skip / abort decisions aren't interesting.
+        if state.output is None or state.output.action not in {"buy"}:
+            state.scratch["kol_audit_skipped"] = True
+            return
+
+        base_msgs = kol_audit_prompt(state)
+        messages = pack_blocks + base_msgs if pack_blocks else base_msgs
+        task = asyncio.create_task(_run_kol_audit(client, messages, model))
+        state.scratch["kol_audit_task"] = task
+        # Mark decision so observers know an audit is in flight.
+        state.output.flags["kol_audit_dispatched"] = True
+
+    kol_audit_dispatch.__name__ = "kol_audit_dispatch"
+    return kol_audit_dispatch

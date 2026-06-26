@@ -5,7 +5,7 @@ KOL wallet events outside the framework, enriches the bought token's
 `TokenInput`, and hands the framework a `KOLContext` per event. The
 framework decides whether to copy and at what size.
 
-Two modes, selected at build time:
+Three modes, selected at build time:
 
   rule (default — v0.6.0)
     fast_safety → kol_quality → fast_market → sizing → END
@@ -21,20 +21,27 @@ Two modes, selected at build time:
     red flags the rules cannot encode (e.g. KOL with a dump-into-followers
     pattern, weak confluence, etc.).
 
+  audit (v0.9.0 / K6)
+    fast_safety → kol_quality → fast_market → sizing → kol_audit_dispatch → END
+    Rule sizing runs sub-ms (Decision returned to the bot immediately).
+    THEN an LLM audit task is fired async — the bot awaits the task
+    later, reads the verdict, and writes it to DecisionLog for offline
+    tuning. The hot path is never blocked. Mirrors the sniper's
+    `hybrid_audit`.
+
 Boundary recap (see docs/plans/2026-06-25-kol-copytrade-strategy.md §0.5):
 the framework defines + decides; the bot fetches and executes. The KOL
 whitelist is loaded by the bot into a `KnowledgePack` and wrapped in
 `KOLRegistry`, which this builder accepts. Cool-down state is also
-bot-owned (passed in via `KOLContext.last_copy_ts`). When `mode="confirmed"`
-the bot also supplies an `LLMClient`.
-
-`audit` mode (rule decides instantly + async LLM verifies) is K6, pending.
+bot-owned (passed in via `KOLContext.last_copy_ts`). When
+`mode="confirmed"` or `mode="audit"` the bot also supplies an `LLMClient`.
 """
 
 from __future__ import annotations
 
 from trading.schemas import KOLAnalystVerdict
 from zetryn.core import END, Graph, RuleNode
+from zetryn.knowledge import KnowledgePack
 from zetryn.llm import LLMClient, LLMNode
 
 from ..kol_registry import KOLRegistry
@@ -42,7 +49,7 @@ from ..nodes import kol_nodes
 
 
 def build_kol_copytrade(
-    knowledge_pack=None,
+    knowledge_pack: KnowledgePack | None = None,
     *,
     registry: KOLRegistry | None = None,
     mode: str = "rule",
@@ -56,10 +63,11 @@ def build_kol_copytrade(
             Either this or `registry` is required.
         registry: Pre-built `KOLRegistry` (overrides any derived from
             `knowledge_pack` when both are given).
-        mode: "rule" (default, no LLM) or "confirmed" (LLM analyst before
-            sizing). "confirmed" requires `llm_client`.
-        llm_client: Required when `mode="confirmed"`. Any `LLMClient`
-            implementation, including `LLMRouter`.
+        mode: "rule" (default), "confirmed" (LLM analyst before sizing),
+            or "audit" (rule decides instantly + async LLM verify).
+            "confirmed" and "audit" require `llm_client`.
+        llm_client: Required when `mode` is "confirmed" or "audit". Any
+            `LLMClient` implementation, including `LLMRouter`.
         model: Optional model id override forwarded to the LLM client.
 
     If the pack contains no `kol_whitelist.json` namespace the resulting
@@ -67,10 +75,12 @@ def build_kol_copytrade(
     with `action="skip"` and a clear reason. The graph still compiles
     and runs — graceful degradation, not a crash.
     """
-    if mode not in ("rule", "confirmed"):
-        raise ValueError(f"unsupported mode: {mode!r}. Use 'rule' or 'confirmed'.")
-    if mode == "confirmed" and llm_client is None:
-        raise ValueError("mode='confirmed' requires an llm_client")
+    if mode not in ("rule", "confirmed", "audit"):
+        raise ValueError(
+            f"unsupported mode: {mode!r}. Use 'rule', 'confirmed', or 'audit'."
+        )
+    if mode in ("confirmed", "audit") and llm_client is None:
+        raise ValueError(f"mode={mode!r} requires an llm_client")
     if registry is None:
         if knowledge_pack is None:
             raise ValueError(
@@ -96,6 +106,17 @@ def build_kol_copytrade(
                 model=model,
             )
         )
+    elif mode == "audit":
+        g.add_node(
+            RuleNode(
+                "kol_audit_dispatch",
+                kol_nodes.make_kol_audit_dispatch(
+                    llm_client,
+                    model=model,
+                    knowledge_pack=knowledge_pack,
+                ),
+            )
+        )
 
     g.set_entry("fast_safety")
     g.add_edge("fast_safety", "kol_quality")
@@ -103,7 +124,12 @@ def build_kol_copytrade(
     if mode == "confirmed":
         g.add_edge("fast_market", "kol_analyst")
         g.add_edge("kol_analyst", "sizing")
+        g.add_edge("sizing", END)
+    elif mode == "audit":
+        g.add_edge("fast_market", "sizing")
+        g.add_edge("sizing", "kol_audit_dispatch")
+        g.add_edge("kol_audit_dispatch", END)
     else:
         g.add_edge("fast_market", "sizing")
-    g.add_edge("sizing", END)
+        g.add_edge("sizing", END)
     return g.compile()

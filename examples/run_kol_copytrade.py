@@ -6,19 +6,30 @@ Simulates a bot's event loop:
   3. Bot builds KOLContext and calls build_kol_copytrade.run(...).
   4. Bot reads Decision and would execute (or not).
 
-Two modes — switch via env var:
-  (default)                                  rule mode, sub-ms, no LLM call
-  ZETRYN_KOL_USE_GROQ=1                      confirmed mode with real Groq LLM
-                                             analyst veto + size_multiplier
-  ZETRYN_GROQ_MODEL=openai/gpt-oss-20b       optional, default shown
+Three modes — switch via env vars:
+  (default, no env)                           rule mode, sub-ms, no LLM call
+  ZETRYN_KOL_USE_GROQ=1                       confirmed mode with real Groq LLM
+                                              (analyst veto + size_multiplier)
+  ZETRYN_KOL_USE_GROQ=1 ZETRYN_KOL_MODE=audit audit mode: rule decides instantly,
+                                              LLM verifies in the background.
+                                              The bot can ``await`` the verdict
+                                              after executing the trade and
+                                              write it to DecisionLog for
+                                              offline rule tuning.
+  ZETRYN_GROQ_MODEL=openai/gpt-oss-20b        optional, default shown
                                               (best red-flag detection in our
-                                              six-scenario variance test; see
-                                              git log for the comparison)
+                                               six-scenario variance test; see
+                                               git log for the comparison)
 
 The confirmed-mode path is what makes "AI Agent" in the brand
 non-empty for the copy-trade strategy: the LLM sees the full fact
 sheet AFTER the rules approved, and can veto qualitatively or scale
 size up/down based on observed confluence.
+
+The audit-mode path is the "best of both worlds": trades are executed
+on the rule decision (sub-ms, no LLM in the hot path), while the LLM
+audit gives you a stream of disagreement signals to tune the rule
+thresholds against — without ever blocking a single trade.
 """
 
 from __future__ import annotations
@@ -288,6 +299,18 @@ async def _decide(graph, ctx: KOLContext, label: str) -> None:
     nodes = " -> ".join(t.node for t in state.trace)
     print(f"  trace     : {nodes}")
 
+    # Audit mode: bot would have already executed the trade here.
+    # In a real bot the await would happen on a different cadence;
+    # we await inline so the demo prints the verdict alongside.
+    audit_task = state.scratch.get("kol_audit_task")
+    if audit_task is not None:
+        verdict = await audit_task
+        agree = "agrees ✓" if verdict.approve else "DISAGREES ✗"
+        print(f"  audit     : {agree}  confidence={verdict.confidence:.2f}")
+        if verdict.concerns:
+            print(f"              concerns: {', '.join(verdict.concerns[:3])}")
+        print(f"              reasoning: {verdict.reasoning}")
+
 
 def _load_env_file() -> None:
     env_file = pathlib.Path(__file__).resolve().parent.parent / ".env"
@@ -337,21 +360,32 @@ async def main() -> None:
         _seed_pack(root)
         pack = KnowledgePack.from_dir(root)
 
+        # Mode selection:
+        #   ZETRYN_KOL_USE_GROQ=1                         → confirmed (LLM gates the size)
+        #   ZETRYN_KOL_USE_GROQ=1 ZETRYN_KOL_MODE=audit   → audit (LLM verifies async)
+        #   (unset)                                        → rule (no LLM)
         use_groq = os.environ.get("ZETRYN_KOL_USE_GROQ") == "1"
+        kol_mode = os.environ.get("ZETRYN_KOL_MODE", "confirmed").lower()
+        if kol_mode not in ("rule", "confirmed", "audit"):
+            raise SystemExit(
+                f"unknown ZETRYN_KOL_MODE={kol_mode!r}. "
+                "Use 'rule', 'confirmed', or 'audit'."
+            )
+
         llm = None
-        if use_groq:
+        if use_groq and kol_mode != "rule":
             llm, model = _build_groq_client()
             if llm is not None:
-                print(f"Mode: confirmed (LLM analyst via Groq {model})")
+                print(f"Mode: {kol_mode} (LLM via Groq {model})")
                 kol_copytrade = build_kol_copytrade(
-                    pack, mode="confirmed", llm_client=llm, model=model,
+                    pack, mode=kol_mode, llm_client=llm, model=model,
                 )
             else:
-                print("Mode: rule (Groq fallback)")
+                print("Mode: rule (Groq fallback — no key found)")
                 kol_copytrade = build_kol_copytrade(pack)
         else:
             print("Mode: rule (no LLM call). Set ZETRYN_KOL_USE_GROQ=1 to "
-                  "try confirmed mode with real Groq.")
+                  "try confirmed or audit mode with real Groq.")
             kol_copytrade = build_kol_copytrade(pack)
 
         def _ev(wallet: str, mint: str, ts: float = 1000.0,
