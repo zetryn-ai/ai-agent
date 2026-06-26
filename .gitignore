@@ -30,3 +30,11 @@ logs/
 .idea/
 .vscode/
 .DS_Store
+
+# Scripts (local helpers — tidak di-track, tiap developer punya sendiri)
+scripts/commit-as.sh
+
+# Graphify — hanya cache internal yang di-exclude; output utama di-track
+graphify-out/cache/
+graphify-out/.graphify_python
+graphify-out/.graphify_root

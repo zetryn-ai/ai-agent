@@ -1,0 +1,482 @@
+{
+  "/mnt/data/Project/zetryn/ai-agent-trading/examples/bench_scanner_latency.py": {
+    "mtime": 1782489354.8246093,
+    "ast_hash": "7fa942d6c9dd7bf824c6b3636e0fa6a9",
+    "semantic_hash": "7fa942d6c9dd7bf824c6b3636e0fa6a9"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/examples/run_backtest.py": {
+    "mtime": 1782489354.825641,
+    "ast_hash": "395ee04dbbd17ea01c5f370c0ec2a2c1",
+    "semantic_hash": "395ee04dbbd17ea01c5f370c0ec2a2c1"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/examples/run_kol_copytrade.py": {
+    "mtime": 1782489354.825641,
+    "ast_hash": "2b325b166ba78174e2fd5994a1c0e052",
+    "semantic_hash": "2b325b166ba78174e2fd5994a1c0e052"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/examples/run_kol_tier_router.py": {
+    "mtime": 1782489354.8266096,
+    "ast_hash": "ed3778974b883d10a3a1c4990e4b7a17",
+    "semantic_hash": "ed3778974b883d10a3a1c4990e4b7a17"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/examples/run_kol_with_router.py": {
+    "mtime": 1782489354.8266096,
+    "ast_hash": "515e33f1ea080cee1ecb3698f30c071b",
+    "semantic_hash": "515e33f1ea080cee1ecb3698f30c071b"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/examples/run_scanner.py": {
+    "mtime": 1782489354.8276095,
+    "ast_hash": "f61a07c253faf536e9c0d9186f3b0d15",
+    "semantic_hash": "f61a07c253faf536e9c0d9186f3b0d15"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/examples/run_sniper.py": {
+    "mtime": 1782489354.8276095,
+    "ast_hash": "25639ef243fc4713f034a139c9a00890",
+    "semantic_hash": "25639ef243fc4713f034a139c9a00890"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/examples/run_with_knowledge.py": {
+    "mtime": 1782489354.8276095,
+    "ast_hash": "7831983cc589e1b37cd1fc8e05426fb8",
+    "semantic_hash": "7831983cc589e1b37cd1fc8e05426fb8"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/examples/run_with_memory.py": {
+    "mtime": 1782489354.8276095,
+    "ast_hash": "0f3a85572fecf7c7035b867712e896ee",
+    "semantic_hash": "0f3a85572fecf7c7035b867712e896ee"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/examples/run_with_router.py": {
+    "mtime": 1782489354.8276095,
+    "ast_hash": "22d4faeac023a114526651187a8ae6e2",
+    "semantic_hash": "22d4faeac023a114526651187a8ae6e2"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/examples/run_with_tools.py": {
+    "mtime": 1782489354.8286097,
+    "ast_hash": "de752a798ab4b3d6b04b99588cec2c08",
+    "semantic_hash": "de752a798ab4b3d6b04b99588cec2c08"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/examples/walkthrough.py": {
+    "mtime": 1782489354.8286097,
+    "ast_hash": "36628cbcc3c410c3613cdf1ceda031f8",
+    "semantic_hash": "36628cbcc3c410c3613cdf1ceda031f8"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/strategies/__init__.py": {
+    "mtime": 1782489354.8296099,
+    "ast_hash": "1255615010fe08fdeca4187f2c2e3827",
+    "semantic_hash": "1255615010fe08fdeca4187f2c2e3827"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/strategies/agents/__init__.py": {
+    "mtime": 1782489354.8303754,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/strategies/agents/kol_copytrade.py": {
+    "mtime": 1782489354.8304768,
+    "ast_hash": "8f0cb3e83968c7c52febbbcfc384b2d5",
+    "semantic_hash": "8f0cb3e83968c7c52febbbcfc384b2d5"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/strategies/agents/scanner.py": {
+    "mtime": 1782489354.8306098,
+    "ast_hash": "ce08f5727915ae9850a7fd0508a4c92d",
+    "semantic_hash": "ce08f5727915ae9850a7fd0508a4c92d"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/strategies/agents/sniper.py": {
+    "mtime": 1782489354.8306098,
+    "ast_hash": "58d0d4781ff2675cc0f04059ebb2b420",
+    "semantic_hash": "58d0d4781ff2675cc0f04059ebb2b420"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/strategies/backtest.py": {
+    "mtime": 1782489354.8306098,
+    "ast_hash": "34bdfe0b0aa5584e4810e0fbea83ba2b",
+    "semantic_hash": "34bdfe0b0aa5584e4810e0fbea83ba2b"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/strategies/kol_registry.py": {
+    "mtime": 1782489354.8306098,
+    "ast_hash": "07beb047938174083bdc6822e6bd3386",
+    "semantic_hash": "07beb047938174083bdc6822e6bd3386"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/strategies/nodes/__init__.py": {
+    "mtime": 1782489354.8306098,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/strategies/nodes/analyst.py": {
+    "mtime": 1782489354.832001,
+    "ast_hash": "5544cf282617e2a03e902bca428757bd",
+    "semantic_hash": "5544cf282617e2a03e902bca428757bd"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/strategies/nodes/decide.py": {
+    "mtime": 1782489354.832001,
+    "ast_hash": "f1631436e6ba05cc600b8e1573a86237",
+    "semantic_hash": "f1631436e6ba05cc600b8e1573a86237"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/strategies/nodes/filters.py": {
+    "mtime": 1782489354.8326101,
+    "ast_hash": "1388af0738209ba61e2b6044f100abab",
+    "semantic_hash": "1388af0738209ba61e2b6044f100abab"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/strategies/nodes/kol_nodes.py": {
+    "mtime": 1782489354.8326101,
+    "ast_hash": "e47a20f81e29ef85f10bb9ce5f762229",
+    "semantic_hash": "e47a20f81e29ef85f10bb9ce5f762229"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/strategies/nodes/prompts.py": {
+    "mtime": 1782489354.83361,
+    "ast_hash": "1990ea91958014fd06ec9569f50bc41c",
+    "semantic_hash": "1990ea91958014fd06ec9569f50bc41c"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/strategies/nodes/sniper_nodes.py": {
+    "mtime": 1782489354.83361,
+    "ast_hash": "bb6c5e7951cd0387dfb2030266dc079a",
+    "semantic_hash": "bb6c5e7951cd0387dfb2030266dc079a"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/strategies/providers.py": {
+    "mtime": 1782489354.83361,
+    "ast_hash": "c18f6a9545a975471fe2e0092e876421",
+    "semantic_hash": "c18f6a9545a975471fe2e0092e876421"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/__init__.py": {
+    "mtime": 1782489354.83361,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_backtest.py": {
+    "mtime": 1782489354.8350608,
+    "ast_hash": "5aa94973c05b030677732a2625c04764",
+    "semantic_hash": "5aa94973c05b030677732a2625c04764"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_core_graph.py": {
+    "mtime": 1782489354.8350608,
+    "ast_hash": "8220cc4f802f310a776a82a0018a36ec",
+    "semantic_hash": "8220cc4f802f310a776a82a0018a36ec"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_knowledge_pack.py": {
+    "mtime": 1782489354.8350608,
+    "ast_hash": "60e56c0f062550d14dc5db1b63e2e0ef",
+    "semantic_hash": "60e56c0f062550d14dc5db1b63e2e0ef"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_kol_audit_mode.py": {
+    "mtime": 1782489354.8350608,
+    "ast_hash": "e726c7efc853f5b947be3273d99651f9",
+    "semantic_hash": "e726c7efc853f5b947be3273d99651f9"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_kol_confirmed_mode.py": {
+    "mtime": 1782489354.8356104,
+    "ast_hash": "813c75272135b28b3e0323b322a2c88e",
+    "semantic_hash": "813c75272135b28b3e0323b322a2c88e"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_kol_copytrade.py": {
+    "mtime": 1782489354.8356104,
+    "ast_hash": "cc09eb557ea0a003c87af0eefa9785d2",
+    "semantic_hash": "cc09eb557ea0a003c87af0eefa9785d2"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_kol_nodes.py": {
+    "mtime": 1782489354.8366103,
+    "ast_hash": "8a59dfdb73a549c2af033a82ed976852",
+    "semantic_hash": "8a59dfdb73a549c2af033a82ed976852"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_kol_reflective_loop.py": {
+    "mtime": 1782489354.8366103,
+    "ast_hash": "7c9c522b25fabad51dc37f39a9aac2d0",
+    "semantic_hash": "7c9c522b25fabad51dc37f39a9aac2d0"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_kol_schemas_registry.py": {
+    "mtime": 1782489354.8366103,
+    "ast_hash": "6f3c2256ed23fb91c60814f1ebc20aef",
+    "semantic_hash": "6f3c2256ed23fb91c60814f1ebc20aef"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_llm.py": {
+    "mtime": 1782489354.8376105,
+    "ast_hash": "7aecdd28743b5302a7e6a829e7ba448e",
+    "semantic_hash": "7aecdd28743b5302a7e6a829e7ba448e"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_llm_router.py": {
+    "mtime": 1782489354.8376105,
+    "ast_hash": "51553aebb2371c37cff39a6fe0f38f77",
+    "semantic_hash": "51553aebb2371c37cff39a6fe0f38f77"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_memory.py": {
+    "mtime": 1782489354.8376105,
+    "ast_hash": "7d2e760dd32a35c3ca5d641bf692e077",
+    "semantic_hash": "7d2e760dd32a35c3ca5d641bf692e077"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_observability.py": {
+    "mtime": 1782489354.8376105,
+    "ast_hash": "b31b8a226d09c1d7fb75fdc3a938846e",
+    "semantic_hash": "b31b8a226d09c1d7fb75fdc3a938846e"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_provider_expansion.py": {
+    "mtime": 1782489354.8386106,
+    "ast_hash": "8b3263dfd4af7ec7636110c9f5cb9159",
+    "semantic_hash": "8b3263dfd4af7ec7636110c9f5cb9159"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_reflective_node.py": {
+    "mtime": 1782489354.8386106,
+    "ast_hash": "8bb80f6fbd0f71aa390165a038fff17e",
+    "semantic_hash": "8bb80f6fbd0f71aa390165a038fff17e"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_scanner.py": {
+    "mtime": 1782489354.8386106,
+    "ast_hash": "d4f809375747caef095d0a18a484c410",
+    "semantic_hash": "d4f809375747caef095d0a18a484c410"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_scanner_reflection.py": {
+    "mtime": 1782489354.8386106,
+    "ast_hash": "c1ea1a7e3662f8faed26470ea50606b3",
+    "semantic_hash": "c1ea1a7e3662f8faed26470ea50606b3"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_scanner_router.py": {
+    "mtime": 1782489354.8396106,
+    "ast_hash": "80d4eb17e3f4c70b36740aeeeb479e83",
+    "semantic_hash": "80d4eb17e3f4c70b36740aeeeb479e83"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_sniper.py": {
+    "mtime": 1782489354.8396106,
+    "ast_hash": "68c08e4827e7ff97b114ae5f812dc040",
+    "semantic_hash": "68c08e4827e7ff97b114ae5f812dc040"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_strategies_knowledge_pack.py": {
+    "mtime": 1782489354.8396106,
+    "ast_hash": "02ff0ce8b9311a386bf5634d77611d31",
+    "semantic_hash": "02ff0ce8b9311a386bf5634d77611d31"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_tool_use.py": {
+    "mtime": 1782489354.8396106,
+    "ast_hash": "ec16d1802cfac8d126b5fcdb150fff67",
+    "semantic_hash": "ec16d1802cfac8d126b5fcdb150fff67"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_tools.py": {
+    "mtime": 1782489354.8406107,
+    "ast_hash": "c83a2e1e9036ceff432a8770d4bb5d0a",
+    "semantic_hash": "c83a2e1e9036ceff432a8770d4bb5d0a"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/tests/test_zetryn_client.py": {
+    "mtime": 1782489354.8406107,
+    "ast_hash": "248fd46d02310b9cd3165c541139757c",
+    "semantic_hash": "248fd46d02310b9cd3165c541139757c"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/trading/__init__.py": {
+    "mtime": 1782489354.8406107,
+    "ast_hash": "38b33b79bb0c4c5d521cba23254d0ffc",
+    "semantic_hash": "38b33b79bb0c4c5d521cba23254d0ffc"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/trading/schemas.py": {
+    "mtime": 1782489354.8417594,
+    "ast_hash": "3c33ff957aca5fe16c1f4782383cd0e2",
+    "semantic_hash": "3c33ff957aca5fe16c1f4782383cd0e2"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/__init__.py": {
+    "mtime": 1782489354.8417594,
+    "ast_hash": "f4d650350ce47043047e383fd9c4738d",
+    "semantic_hash": "f4d650350ce47043047e383fd9c4738d"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/auth/__init__.py": {
+    "mtime": 1782489354.8427994,
+    "ast_hash": "30f44764501254f58da440df71dfbeb4",
+    "semantic_hash": "30f44764501254f58da440df71dfbeb4"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/auth/subscription.py": {
+    "mtime": 1782489354.8429458,
+    "ast_hash": "e7f40e8d8c23e599f1cc2d47dcf8c1c5",
+    "semantic_hash": "e7f40e8d8c23e599f1cc2d47dcf8c1c5"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/backtest/__init__.py": {
+    "mtime": 1782489354.8429458,
+    "ast_hash": "e0a2e5396d5a829aedeb58800d1aaf6a",
+    "semantic_hash": "e0a2e5396d5a829aedeb58800d1aaf6a"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/backtest/runner.py": {
+    "mtime": 1782489354.8434184,
+    "ast_hash": "23f62b2d688ce399e02082067523a2e7",
+    "semantic_hash": "23f62b2d688ce399e02082067523a2e7"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/core/__init__.py": {
+    "mtime": 1782489354.8434184,
+    "ast_hash": "6a8f00ea40891489151c71b938747bec",
+    "semantic_hash": "6a8f00ea40891489151c71b938747bec"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/core/edge.py": {
+    "mtime": 1782489354.843772,
+    "ast_hash": "70c7b69e9df8024f3d40cbfee87f63b5",
+    "semantic_hash": "70c7b69e9df8024f3d40cbfee87f63b5"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/core/graph.py": {
+    "mtime": 1782489354.843772,
+    "ast_hash": "44cf74fb668535e15fa26f965e051909",
+    "semantic_hash": "44cf74fb668535e15fa26f965e051909"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/core/hooks.py": {
+    "mtime": 1782489354.843772,
+    "ast_hash": "710a8fce396192483166c42bcf45df02",
+    "semantic_hash": "710a8fce396192483166c42bcf45df02"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/core/node.py": {
+    "mtime": 1782489354.843772,
+    "ast_hash": "88b05764ef9033c311e02dbed02e33a2",
+    "semantic_hash": "88b05764ef9033c311e02dbed02e33a2"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/core/state.py": {
+    "mtime": 1782489354.843772,
+    "ast_hash": "df16b33d8ba8390b126d223165234885",
+    "semantic_hash": "df16b33d8ba8390b126d223165234885"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/knowledge/__init__.py": {
+    "mtime": 1782489354.843772,
+    "ast_hash": "9119be5c9c296acd43c5e18c1ac4c22e",
+    "semantic_hash": "9119be5c9c296acd43c5e18c1ac4c22e"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/knowledge/pack.py": {
+    "mtime": 1782489354.8447766,
+    "ast_hash": "474e2b0be678d6736e07145d034788c7",
+    "semantic_hash": "474e2b0be678d6736e07145d034788c7"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/llm/__init__.py": {
+    "mtime": 1782489354.8447766,
+    "ast_hash": "0b3fa3d6a252cfeec7730080d163e73b",
+    "semantic_hash": "0b3fa3d6a252cfeec7730080d163e73b"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/llm/client.py": {
+    "mtime": 1782489354.8452647,
+    "ast_hash": "c8af4b345d3f298094931d6f69706a63",
+    "semantic_hash": "c8af4b345d3f298094931d6f69706a63"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/llm/config.py": {
+    "mtime": 1782489354.8452647,
+    "ast_hash": "0ad2e0c24dd9df04f56b5bf8151e6fdb",
+    "semantic_hash": "0ad2e0c24dd9df04f56b5bf8151e6fdb"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/llm/keypool.py": {
+    "mtime": 1782489354.8452647,
+    "ast_hash": "17f4ae1e85c2a3d285d20054a44e7be7",
+    "semantic_hash": "17f4ae1e85c2a3d285d20054a44e7be7"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/llm/node.py": {
+    "mtime": 1782489354.8452647,
+    "ast_hash": "56758f42109511d137796e4896339896",
+    "semantic_hash": "56758f42109511d137796e4896339896"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/llm/openai_compat.py": {
+    "mtime": 1782489354.845611,
+    "ast_hash": "a8a7a8474e4908e7d37c96b3efa3bcde",
+    "semantic_hash": "a8a7a8474e4908e7d37c96b3efa3bcde"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/llm/router.py": {
+    "mtime": 1782489354.845611,
+    "ast_hash": "31de1ae7d4a356990694c53cdf07a26d",
+    "semantic_hash": "31de1ae7d4a356990694c53cdf07a26d"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/llm/structured.py": {
+    "mtime": 1782489354.8466113,
+    "ast_hash": "37e755412035968961d8e848a3b96e3c",
+    "semantic_hash": "37e755412035968961d8e848a3b96e3c"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/llm/tool_use.py": {
+    "mtime": 1782489354.8466113,
+    "ast_hash": "2d1e34930b488d93e0591fbe8c5ba3f7",
+    "semantic_hash": "2d1e34930b488d93e0591fbe8c5ba3f7"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/llm/types.py": {
+    "mtime": 1782489354.8466113,
+    "ast_hash": "0a3f7550e3e7da57ba452cc094c6a1b6",
+    "semantic_hash": "0a3f7550e3e7da57ba452cc094c6a1b6"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/llm/zetryn_client.py": {
+    "mtime": 1782489354.8466113,
+    "ast_hash": "a574edf3e48eaa9b3ca692cc3b2762cd",
+    "semantic_hash": "a574edf3e48eaa9b3ca692cc3b2762cd"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/memory/__init__.py": {
+    "mtime": 1782489354.8476114,
+    "ast_hash": "c0ead2d859da2b6e6bcc8c167cbf08ae",
+    "semantic_hash": "c0ead2d859da2b6e6bcc8c167cbf08ae"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/memory/blacklist.py": {
+    "mtime": 1782489354.8476114,
+    "ast_hash": "e594cad6f5bc1a28ad464cdeade29381",
+    "semantic_hash": "e594cad6f5bc1a28ad464cdeade29381"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/memory/decision_log.py": {
+    "mtime": 1782489354.8476114,
+    "ast_hash": "3215713085a82487859a944a5c5d3a2c",
+    "semantic_hash": "3215713085a82487859a944a5c5d3a2c"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/memory/reflective.py": {
+    "mtime": 1782489354.8476114,
+    "ast_hash": "bc9c1fa6782d5105244c32df84db362a",
+    "semantic_hash": "bc9c1fa6782d5105244c32df84db362a"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/memory/store.py": {
+    "mtime": 1782489354.8476114,
+    "ast_hash": "4cc93ec2e86f9bbc2b5adbc5ce909f66",
+    "semantic_hash": "4cc93ec2e86f9bbc2b5adbc5ce909f66"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/observability/__init__.py": {
+    "mtime": 1782489354.8476114,
+    "ast_hash": "c94764e72130524a6d9c25bc5c4cd58b",
+    "semantic_hash": "c94764e72130524a6d9c25bc5c4cd58b"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/observability/logging.py": {
+    "mtime": 1782489354.8486114,
+    "ast_hash": "b9bd1c5784edb2d0c20a2a6427d484d7",
+    "semantic_hash": "b9bd1c5784edb2d0c20a2a6427d484d7"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/observability/trace.py": {
+    "mtime": 1782489354.8486114,
+    "ast_hash": "c810c2d142278e702a2b803535182b56",
+    "semantic_hash": "c810c2d142278e702a2b803535182b56"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/providers/__init__.py": {
+    "mtime": 1782489354.8486114,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/tools/__init__.py": {
+    "mtime": 1782489354.8486114,
+    "ast_hash": "923168a74be1f1af624c628b9978b9fd",
+    "semantic_hash": "923168a74be1f1af624c628b9978b9fd"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/tools/registry.py": {
+    "mtime": 1782489354.8496869,
+    "ast_hash": "91fe56bfee2555d4bcf71d1717f3a769",
+    "semantic_hash": "91fe56bfee2555d4bcf71d1717f3a769"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/zetryn/tools/tool.py": {
+    "mtime": 1782489354.8496869,
+    "ast_hash": "ea8673c872a2501c11eb6179a5371ce9",
+    "semantic_hash": "ea8673c872a2501c11eb6179a5371ce9"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/CHANGELOG.md": {
+    "mtime": 1782489354.8186088,
+    "ast_hash": "8c2e070962d7b21d49b52039321974cf",
+    "semantic_hash": "8c2e070962d7b21d49b52039321974cf"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/CLAUDE.md": {
+    "mtime": 1782489907.8513172,
+    "ast_hash": "ffbe636021ee476e2ff6e2ee98f699fa",
+    "semantic_hash": "ffbe636021ee476e2ff6e2ee98f699fa"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/README.md": {
+    "mtime": 1782489354.819609,
+    "ast_hash": "c2003808669fdcf072290e0b685aec30",
+    "semantic_hash": "c2003808669fdcf072290e0b685aec30"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/docs/CAPABILITIES.md": {
+    "mtime": 1782489354.821609,
+    "ast_hash": "7129f178e06bc510b5889488b2180102",
+    "semantic_hash": "7129f178e06bc510b5889488b2180102"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/docs/plans/2026-06-23-zetryn-agent-framework-design.md": {
+    "mtime": 1782489354.8226092,
+    "ast_hash": "8d06d6b92362cf72ff71ec16b5c9264d",
+    "semantic_hash": "8d06d6b92362cf72ff71ec16b5c9264d"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/docs/plans/2026-06-24-ai-first-pivot.md": {
+    "mtime": 1782489354.8236094,
+    "ast_hash": "d3a62a88dac9e94bd878c320222af9df",
+    "semantic_hash": "d3a62a88dac9e94bd878c320222af9df"
+  },
+  "/mnt/data/Project/zetryn/ai-agent-trading/docs/plans/2026-06-25-kol-copytrade-strategy.md": {
+    "mtime": 1782489354.8236094,
+    "ast_hash": "e007327234e2ff64333f0c21a4443862",
+    "semantic_hash": "e007327234e2ff64333f0c21a4443862"
+  }
+}
