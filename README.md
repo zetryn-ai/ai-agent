@@ -185,6 +185,28 @@ await decision_log.log(state.run_id, {
 })
 ```
 
+**Reflective sniper (v0.11.0):** pass a `DecisionLog` at build time and the
+sniper's LLM path becomes loss-aware — a `ReflectiveNode` runs between
+`fast_market` and the LLM decider, compiling a `LESSONS from recent snipe
+outcomes` block from the last N decisions. The LLM conditions on real
+historical losses, not just the static prompt.
+
+```python
+from zetryn.memory import DecisionLog, JSONFileStore
+
+log = DecisionLog(JSONFileStore("./sniper-decisions.json"))
+
+# Reflective loop active in llm / hybrid modes only.
+# hybrid_audit intentionally skips reflect — the sub-ms rule path must not
+# block on a memory read; the bot can reflect offline in that mode.
+sniper = build_sniper(
+    llm,
+    decision_log=log,
+    reflect_window=20,      # how many past decisions to look at
+    reflect_top_k=5,        # top-k loser patterns to surface
+)
+```
+
 ---
 
 ## Install
@@ -291,8 +313,9 @@ zetryn-trading/
 │   └── backtest/        ← generic Backtester
 ├── trading/             ← shared contract (TokenInput, Decision, FullAnalysis, ...)
 └── strategies/          ← reference agents (move to your bot repo for production)
-    ├── nodes/           ← analyst.py, decide.py, filters.py, sniper_nodes.py
-    └── agents/          ← scanner.py, sniper.py
+    ├── nodes/           ← analyst.py, decide.py, filters.py, sniper_nodes.py,
+    │                       kol_nodes.py
+    └── agents/          ← scanner.py, sniper.py, kol_copytrade.py
 ```
 
 **Dependency rule (strict):**
@@ -358,27 +381,31 @@ reverse.
 
 ## Status
 
-**Maturity:** Alpha (v0.10.0) — actively developed, breaking changes possible
+**Maturity:** Alpha (v0.11.0) — actively developed, breaking changes possible
 between 0.x releases until the API stabilises.
 
 **Single source of truth for roadmap & milestone status:**
 [`docs/CAPABILITIES.md`](docs/CAPABILITIES.md) §6. The summary below is just
 a snapshot — the table over there is what gets updated on every release.
 
-What's built (v0.10.0):
+What's built (v0.11.0):
 
 - Core engine, LLM layer, tools, memory, observability, auth seam, backtest
-- **Three reference strategies in `strategies/agents/`:**
-  - Scanner v2 (AI-first, M8) — general classifier, learning loop closed via
-    `build_scanner(..., decision_log=...)`
-  - Sniper (M9) — `rule` / `llm` / `hybrid` / `hybrid_audit` modes
-  - **KOL Copy-Trade — feature-complete**: `rule` (sub-ms), `confirmed`
-    (LLM analyst vetoes or scales size via `KOLAnalystVerdict`),
-    `audit` (rule sub-ms + async LLM verify), and `confirmed +
-    decision_log` (K7, v0.10.0 — analyst sees recent loser patterns).
-    Example: [`examples/run_kol_copytrade.py`](examples/run_kol_copytrade.py)
-    (`ZETRYN_KOL_USE_GROQ=1 ZETRYN_KOL_REFLECT=1` exercises the full
-    learning loop with real Groq).
+- **Three reference strategies — all sharing a consistent learning-loop shape:**
+
+  | Strategy | Modes | Reflective loop |
+  |---|---|---|
+  | **Scanner** | AI-first (single LLM call) | ✅ `build_scanner(..., decision_log=...)` |
+  | **Sniper** | `rule` / `llm` / `hybrid` / `hybrid_audit` | ✅ `build_sniper(..., decision_log=...)` — wired in `llm`/`hybrid`; skipped in `hybrid_audit` to preserve sub-ms path |
+  | **KOL Copy-Trade** | `rule` / `confirmed` / `audit` | ✅ `build_kol_copytrade(..., decision_log=...)` — wired in `confirmed`; skipped in `audit` |
+
+  All three strategies expose the same `decision_log` + `reflect_window` +
+  `reflect_feature_keys` + `reflect_top_k` parameters. Passing a `DecisionLog`
+  inserts a `ReflectiveNode` before the LLM call — the analyst sees a
+  `LESSONS from recent outcomes` system block compiled from real historical
+  losses. No `decision_log` → behaviour is identical to prior releases
+  (backwards-compatible).
+
 - Pre-P1 foundations: `KnowledgePack`, `LLMRouter` (multi-provider failover
   + per-model throttle), `ReflectiveNode`
 - **7 LLM providers** wired with per-model free-tier presets:
