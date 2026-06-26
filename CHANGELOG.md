@@ -5,6 +5,63 @@ All notable changes to `zetryn-trading` will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] — 2026-06-26
+
+K6: KOL Copy-Trade `audit` mode. The "AI Agent" claim now extends to a
+strategy that can't tolerate LLM latency in its hot path — rule sizing
+runs sub-ms (Decision returned to the bot immediately), then an async
+LLM audit fires in the background. The bot awaits the verdict later
+and writes it to DecisionLog for offline rule tuning. Mirrors the
+sniper's `hybrid_audit` pattern.
+
+### Added
+- **`kol_audit_prompt(state)`** in `strategies/nodes/kol_nodes.py` —
+  builds a prompt that reviews an already-emitted Decision rather than
+  producing one. Forces the LLM into "agree or flag concerns" mode.
+- **`_run_kol_audit(client, messages, model)`** — background coroutine
+  that swallows every exception into a flagged `KOLAnalystVerdict`
+  (`approve=False`, `audit_failed: <ExceptionType>` concern). It MUST
+  never raise into the event loop and crash the bot.
+- **`make_kol_audit_dispatch(client, *, model, knowledge_pack)`** —
+  factory returning the rule node that fires the async task. Skips
+  audit entirely when the decision is not "buy" (no wasted LLM call
+  on skip/abort).
+- **`mode="audit"`** in `build_kol_copytrade(...)` — wires the dispatch
+  node AFTER `sizing` so the Decision is already in `state.output`
+  when the audit task is created. Edge: `sizing -> kol_audit_dispatch -> END`.
+- **`examples/run_kol_copytrade.py`** updated with
+  `ZETRYN_KOL_MODE=audit` switch to demo the audit flow end-to-end.
+  `_decide()` now awaits the audit task and prints the verdict
+  alongside the Decision.
+- **11 new tests** in `tests/test_kol_audit_mode.py` covering: rule
+  decision set BEFORE audit fires, task is an awaitable, verdict
+  resolves to parsed `KOLAnalystVerdict`, disagreement does not mutate
+  the Decision, LLM error swallowed into flagged verdict, garbage JSON
+  also swallowed, hard-gate / kol_quality rejects skip the audit
+  entirely, plus backwards-compat checks for rule + confirmed modes.
+
+### Verified end-to-end
+Live Groq (gpt-oss-20b) audit run on the six-scenario test set: the
+audit caught disagreement on the three problematic cases the rule
+layer can't see (subtle bundler, toxic KOL pattern, hype-no-substance)
+and agreed with rule sizing on the other three. Behavior matches the
+confirmed-mode variance test from v0.7.0 — proving the same prompt
+quality works in audit posture.
+
+### Backwards compatibility
+- 243 tests green (215 existing + 11 from audit-mode tests + 17 from
+  v0.8.0 provider expansion). No breaking change.
+- `mode="rule"` (default) and `mode="confirmed"` paths unchanged.
+
+### Notes
+- The "AI Agent that trades" claim is now complete for KOL copy-trade
+  across all three latency profiles:
+    rule       → sub-ms, no LLM, pure judgement encoded as rules
+    confirmed  → 200-500ms, LLM gates size before execution
+    audit      → sub-ms execute + async LLM verdict for offline learning
+- No fetcher leaked into the framework. The audit prompt sees only
+  what's already in `state.context` + `state.output`.
+
 ## [0.8.0] — 2026-06-25
 
 Provider expansion: framework now ships with four additional

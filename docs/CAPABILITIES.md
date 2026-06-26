@@ -277,6 +277,7 @@ table on every release** — README and plan docs link here instead of duplicati
 | **K (KOL Copy-Trade)** | **First strategy reference agent beyond Scanner/Sniper** — `build_kol_copytrade` rule mode, `KOLRegistry` from pack | ✅ done | v0.6.0 |
 | **K5** | **KOL Copy-Trade `confirmed` mode** — LLM analyst between rules and sizing, can veto or scale size via `KOLAnalystVerdict` | ✅ done | v0.7.0 |
 | **Provider expansion** | **7 providers wired** (Groq, Gemini, OpenRouter + Cerebras, Mistral, SambaNova, NVIDIA NIM) with per-model presets + `TIER_SPEED/QUALITY/VOLUME` router builders | ✅ done | v0.8.0 |
+| **K6** | **KOL Copy-Trade `audit` mode** — rule decides sub-ms (Decision returned immediately), LLM verifies in the background via `kol_audit_task`. Mirror of sniper's `hybrid_audit`. | ✅ done | v0.9.0 |
 | K6 | KOL Copy-Trade `audit` mode (async LLM second opinion after rule decide) | 📅 later | — |
 | K7 | KOL Copy-Trade × `ReflectiveNode` integration | 📅 later | — |
 | M11 | Phase 2 LLM strategy — parallel specialist nodes (paid providers) | 📅 later | — |

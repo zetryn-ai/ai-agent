@@ -358,7 +358,7 @@ reverse.
 
 ## Status
 
-**Maturity:** Alpha (v0.8.0) — actively developed, breaking changes possible
+**Maturity:** Alpha (v0.9.0) — actively developed, breaking changes possible
 between 0.x releases until the API stabilises.
 
 **Single source of truth for roadmap & milestone status:**
