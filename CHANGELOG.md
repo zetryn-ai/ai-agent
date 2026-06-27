@@ -5,6 +5,88 @@ All notable changes to `zetryn-trading` will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] — 2026-06-27
+
+**First stable release.** Public API is now frozen across v1.x — any
+breaking change will bump to v2.0.0. Functional codebase is identical to
+v0.17.0; this release is the formal commitment to API stability plus a
+documentation rewrite focused on first-impression clarity for new users.
+
+### Stability commitment
+
+- **`zetryn.core`, `zetryn.llm`, `zetryn.knowledge`, `zetryn.memory`,
+  `zetryn.tools`, `zetryn.observability`, `zetryn.backtest`,
+  `zetryn.config`, `zetryn.auth`** — every public symbol exported from
+  these subpackages is contract. Breaking changes only at v2.0.0.
+- **`trading/schemas.py`** — `Decision`, `TradingContext`, every `*Context`
+  / `*Verdict` / `*Config` schema is stable. New optional fields may be
+  added; required fields will not be added or removed without a major bump.
+- **`strategies/`** — reference agents are shipped as examples. Their
+  public `build_*(...)` signatures follow the same stability rules; their
+  internal node/edge layout is implementation detail.
+- Bug fixes between minor releases follow `1.0.x` patch versioning;
+  additive features (e.g. M14 multi-agent panel currently on branch)
+  bump to `1.x.0`; breaking changes bump to `2.0.0`.
+
+### Recap — what's in v1.0.0
+
+(See [`docs/CAPABILITIES.md`](docs/CAPABILITIES.md) for the live matrix.)
+
+- **Graph engine** (M0–M10) — `State`, `Node`, `Edge`, `Graph`,
+  `Command`, compile-time validator, per-node `StepTrace`.
+- **LLM layer** — `OpenAICompatibleClient` for 7 providers (Groq,
+  Gemini, OpenRouter, Cerebras, Mistral, SambaNova, NVIDIA NIM),
+  `KeyPool` rotation on 429, `LLMRouter` multi-provider failover with
+  per-model RPM/RPD/TPM/TPD throttle, three tier presets
+  (`TIER_SPEED` / `TIER_QUALITY` / `TIER_VOLUME`).
+- **Knowledge + Memory + Tools** — `KnowledgePack` (markdown + JSON
+  playbook), `MemoryStore` / `Blacklist` / `DecisionLog`,
+  `ReflectiveNode` loss-pattern extractor wired into every LLM path,
+  `Tool` + `ToolRegistry` + `tool_use_loop` for LLM-driven tool calls.
+- **8 reference agents** — Scanner, Sniper, KOL Copy-Trade, Graduation
+  Snipe, Position Lifecycle, Smart Money Confluence, Early-Stage Dip
+  Buy, Organic Growth Detector. All share `decision_log` + `reflect_*`
+  parameters for the learning loop.
+- **YAML loader** (M13, v0.17.0) — `zetryn.config.load_graph(path,
+  registry=...)` with AST-whitelisted boolean DSL, `module:attr`
+  references, `${name}` placeholders, eager validation, CLI validator.
+- **Backtest harness** — `Backtester.run(items)`; test, backtest, and
+  live all use the same compiled graph.
+
+### Documentation
+
+- **README rewritten** for v1.0.0: 47% shorter (602 → 321 lines),
+  structured as summary + handoffs to GUIDE.md / CAPABILITIES.md /
+  STRATEGIES.md / plans/. Quickstart-first ordering, YAML loader
+  featured, M14 intentionally not mentioned.
+- **`docs/GUIDE.md §9 Bot Integration`** added — push vs pull,
+  pre-filter funnel at the bot, and the framework/bot boundary table
+  consolidated from README.
+
+### Out of scope (deferred)
+
+- **M14 multi-agent panel** — development on branch
+  `feat/dev/multi-agent-panel`. Targets v1.1.0 once real-source
+  testing on `zetryn-ai/bot` template completes.
+- **M11** (Phase 2 LLM, parallel specialists with paid providers) and
+  **M12** (Phase 3, Zetryn-hosted Hardes / Medifus / Easfus) — platform
+  workstream P1–P4 must ship first; see `docs/CAPABILITIES.md §6`.
+
+### Known limits
+
+- **Zetryn platform** (hosted models, subscription auth) is **not yet
+  live**. The auth seam is stubbed in `zetryn/auth/`; production today
+  uses public LLM providers with your own keys.
+- Single-provider free tier can spike p95 latency past targets.
+  Recommended production pattern: `LLMRouter` with ≥ 2 providers.
+  Working example: [`examples/run_with_router.py`](examples/run_with_router.py).
+
+### Migration from v0.17.0
+
+None. v1.0.0 is the v0.17.0 codebase with a stable-API guarantee and a
+documentation rewrite. No code changes required; `pip install --upgrade`
+is sufficient.
+
 ## [0.17.0] — 2026-06-27
 
 M13 ships: **YAML graph loader**. Declarative graph specs — load a strategy
