@@ -5,6 +5,44 @@ All notable changes to `zetryn-trading` will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0] — 2026-06-27
+
+S6 ships: **Early-Stage Dip Buy** — the sixth (and final) S-tier entry
+agent. One agent, two events: fires after the initial post-launch or
+post-graduation dump settles. Config `event_type ∈ {launch, graduation}`
+selects the timing window; the signal mechanic (sell pressure subsiding,
+holder retention, buy-ratio recovery) is identical for both.
+
+### Added
+- **`build_dip_buy(...)`** in `strategies.agents.dip_buy` — compiled
+  graph with four modes (`rule` / `llm` / `hybrid` / `hybrid_audit`).
+  Reflective loop wired into `llm` / `hybrid` when a `decision_log` is
+  provided.
+- **New schemas in `trading/schemas.py`**: `DipBuySnapshot`
+  (sell_pressure_score, buy_ratio_5m, holder_retention_pct,
+  unique_buyers_trend, price_stable_seconds), `DipBuyConfig`,
+  `DipBuyContext`, `DipBuyVerdict`.
+- **`strategies/nodes/dip_buy_nodes.py`** — `fast_safety` (re-export),
+  `timing_gate` (window check: too early / too late), `dip_gate` (min
+  dip from ATH + sell pressure threshold), `recovery_gate` (buy-ratio,
+  holder retention, unique buyers trend, price stability), `market_gate`,
+  `rule_size_and_buy` (recovery_score × dip_bonus × sell_calm formula),
+  `dip_prompt` / `dip_result` / `dip_guardrail` / `make_audit_dispatch`.
+- **`examples/run_dip_buy.py`** — offline stub demo across 8 scenarios
+  (good launch/grad, skip cases, rug abort). Opt-in real Groq via
+  `ZETRYN_DIP_USE_GROQ=1`.
+- **Tests** — `test_dip_buy_nodes.py` (16), `test_dip_buy_agent.py`
+  (11). All tests pass, ruff clean.
+
+### Design notes
+- **Four gates in series** (timing → dip → recovery → market) so the
+  exact rejection reason is always logged — invaluable for tuning
+  thresholds from real data.
+- **`event_type` is config, not schema polymorphism** — same
+  `DipBuySnapshot` shape for launch and graduation; the bot sets
+  `event_type` and adjusts `max_time_since_event_seconds` accordingly.
+  This keeps the agent truly "one agent, two events" without branching.
+
 ## [0.14.0] — 2026-06-27
 
 S5 ships: **Smart Money Confluence** — the fifth S-tier entry agent. Fires

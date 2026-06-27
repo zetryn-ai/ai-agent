@@ -6,6 +6,7 @@ demonstrate and test the framework against the ``trading`` contract.
 """
 
 from .agents.confluence import build_confluence
+from .agents.dip_buy import build_dip_buy
 from .agents.graduation import build_graduation
 from .agents.kol_copytrade import build_kol_copytrade
 from .agents.lifecycle import build_lifecycle
@@ -21,6 +22,7 @@ __all__ = [
     "SampleProvider",
     "SmartWalletRegistry",
     "build_confluence",
+    "build_dip_buy",
     "build_graduation",
     "build_kol_copytrade",
     "build_lifecycle",

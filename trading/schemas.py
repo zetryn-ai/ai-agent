@@ -683,3 +683,104 @@ class ConfluenceVerdict(BaseModel):
     size_pct: float = Field(ge=0, le=1)
     reasoning: str = ""
     concerns: list[str] = Field(default_factory=list)
+
+
+# -- Early-Stage Dip Buy (v0.15.0 / S6) -------------------------------------
+#
+# One agent, two events. After launch or graduation a dump wave follows;
+# S6 waits for it to settle and enters when sell pressure thins out,
+# holders retain, and unique buyers recover. The bot monitors the time-
+# series and pushes a `DipBuyContext` per candidate settlement window.
+# The framework validates timing + dip depth + recovery signals and
+# returns a `Decision`.
+
+
+class DipBuySnapshot(BaseModel):
+    """Post-event market snapshot the bot pushes to the framework.
+
+    The bot owns the time-series (candles, trades, holder history) and
+    distills it into this flat snapshot. The framework never fetches or
+    aggregates — it only reads and validates.
+    """
+
+    event_type: Literal["launch", "graduation"]
+    mint: str
+    detected_at_ts: float
+    time_since_event_seconds: float = Field(ge=0)
+
+    # Dip metrics
+    price_vs_ath_pct: float = Field(
+        description="(current_price / post_event_ath) - 1. Negative means dipped below ATH.",
+    )
+    sell_pressure_score: float = Field(
+        ge=0, le=1,
+        description="Bot-computed: 0=no selling, 1=extreme selling.",
+    )
+
+    # Recovery signals
+    buy_ratio_5m: float = Field(ge=0, le=1, default=0.5)
+    holder_retention_pct: float = Field(
+        ge=0, le=1, default=0.0,
+        description="Fraction of holders that stayed through the dump.",
+    )
+    unique_buyers_trend: float = Field(
+        ge=-1, le=1, default=0.0,
+        description="Positive=unique buyers rising, negative=falling.",
+    )
+    price_stable_seconds: float = Field(
+        ge=0, default=0.0,
+        description="How long price has not made a new low.",
+    )
+
+
+class DipBuyConfig(BaseModel):
+    """Tunables for the Early-Stage Dip Buy strategy."""
+
+    event_type: Literal["launch", "graduation"] = "launch"
+    decision_mode: Literal["rule", "llm", "hybrid", "hybrid_audit"] = "rule"
+
+    # Timing window (seconds since the triggering event)
+    min_time_since_event_seconds: float = 60.0
+    max_time_since_event_seconds: float = 600.0   # ~10 min for launch; set 1800 for grad
+
+    # Dip gate
+    min_dip_pct: float = Field(
+        ge=0, default=0.15,
+        description="Minimum drop from post-event ATH required (e.g. 0.15 = must be ≥15% below ATH).",
+    )
+    max_sell_pressure_score: float = Field(ge=0, le=1, default=0.35)
+
+    # Recovery gates
+    min_buy_ratio_5m: float = Field(ge=0, le=1, default=0.52)
+    min_holder_retention_pct: float = Field(ge=0, le=1, default=0.65)
+    min_unique_buyers_trend: float = Field(ge=-1, le=1, default=0.0)
+    min_price_stable_seconds: float = Field(ge=0, default=30.0)
+
+    # Market gates
+    min_liquidity_usd: float = 3_000
+    max_top10_pct: float = 0.65
+    max_bundler_wallets: int = 3
+    max_sniper_wallets: int = 15
+
+    # Sizing
+    base_size: float = 0.75
+    max_size: float = 3.0
+
+
+@dataclass
+class DipBuyContext:
+    """What the bot hands `build_dip_buy(...)` for one candidate entry."""
+
+    token: TokenInput
+    snapshot: DipBuySnapshot
+    config: DipBuyConfig = field(default_factory=DipBuyConfig)
+
+
+class DipBuyVerdict(BaseModel):
+    """Structured LLM output for the dip-buy decider."""
+
+    action: Literal["buy", "skip", "abort"]
+    confidence: float = Field(ge=0, le=1)
+    size_pct: float = Field(ge=0, le=1)
+    reasoning: str = ""
+    concerns: list[str] = Field(default_factory=list)
