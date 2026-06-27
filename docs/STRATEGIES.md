@@ -1,135 +1,88 @@
-# Agents Catalog
+# Solana Memecoin Strategy Catalog
 
-Single source of truth for every reference agent in this repo — shipped,
-planned, and considered-and-rejected. Two categories so far:
+Strategies that are actually used by professional Solana memecoin traders
+(validated against mainstream sources, not speculative). Tiered S / A / C
+to guide what to build next.
 
-- **Entry agent** — decides whether to OPEN a position (buy / skip / abort).
-- **Position management agent** — decides what to do on an OPEN position
-  (hold / take_profit / stop_loss / scale_out / exit_full).
+**Scope:** Solana memecoin / DEX, targeted at v1.0.0 release.
 
-For roadmap status see [CAPABILITIES.md §6](CAPABILITIES.md#6-roadmap).
-For per-agent design specs see [plans/](plans/).
-For non-roadmap changes see [maintenance-log.md](maintenance-log.md).
-
-**Tier:** S = build next · A = build after S · B = considered, partial overlap · C = rejected with reason.
-
----
-
-## Shipped
-
-| Category | Name | Version | Builder | Modes | Distinct signal |
-|---|---|---|---|---|---|
-| Entry | Scanner | v0.1.0 / v0.3.0 | `build_scanner(llm)` | AI-first single LLM call + hard gates + guardrail | Multi-aspect narrative + structure analysis |
-| Entry | Sniper | v0.1.0 / v0.11.0 (+reflect) | `build_sniper(llm?, decision_log?)` | rule · llm · hybrid · hybrid_audit | Sub-ms rule path; LLM inside deterministic guardrail |
-| Entry | KOL Copy-Trade | v0.6.0 → v0.11.0 (K1–K7) | `build_kol_copytrade(pack, mode, ...)` | rule · confirmed · audit | Single-wallet historical performance (`KOLProfile`) + cooldown |
-| Entry | Pump.fun Graduation Snipe | v0.12.0 | `build_graduation(llm?, decision_log?)` | rule · llm · hybrid · hybrid_audit | Bonding-curve fill speed + unique buyers + LP setup at graduation moment |
+| | |
+|---|---|
+| For build status of each row | see `Implemented` column |
+| For roadmap (versions, milestones) | [CAPABILITIES.md §6](CAPABILITIES.md#6-roadmap) |
+| For per-strategy design specs | [plans/](plans/) |
 
 ---
 
-## Planned — S-tier (build next)
+## Tier rubric
 
-| Category | Name | Tier | Distinct signal | Why now |
-|---|---|---|---|---|
-| Position management | [PL1 — Position Lifecycle Helpers](#pl1-position-lifecycle-helpers) | S | PnL trajectory, drawdown-from-peak, time-in-trade on an open position | Biggest gap: every shipped agent decides ENTRY, nothing helps with EXIT. Users bolt on TP/SL outside the framework. |
-| Entry | [S5 — Smart Money Confluence](#s5-smart-money-confluence) | S | N pre-vetted smart wallets converging on the same token within window T | Smart-wallet count is currently a scoring INPUT inside scanner. As primary trigger it's a much higher-precision signal. Distinct from KOL (multi-wallet correlation, not single-wallet copy). |
+A strategy is rated on four dimensions; the weakest dimension caps the tier.
 
-## Planned — A-tier (after S ships)
+| Dimension | What it asks |
+|---|---|
+| **Edge durability** | Is the alpha still there, or has the crowd saturated it? |
+| **Signal-to-noise** | What fraction of fired signals are real (vs bait / wash trades / random)? |
+| **Data accessibility** | Can the bot get the data with standard public feeds (Helius, Cielo, GMGN, BirdEye)? |
+| **Distinctness** | Is the trigger genuinely different from other listed strategies, or a config tweak? |
 
-| Category | Name | Tier | Distinct signal | Why later |
-|---|---|---|---|---|
-| Entry | Migration Front-Run | A | Token migrating between DEXes (Raydium ↔ Meteora, pool upgrades). Not a new launch — has history, holders, narrative. | Smaller TAM than S-tier; depends on cross-DEX migration feed. |
-| Entry | Re-Accumulation Detector | A | Post-dump (-60–80%) tightening sells + smart-wallet quiet accumulation + holder rebound | Especially benefits from PL1 lifecycle helpers — build that first. |
+| Tier | Meaning |
+|---|---|
+| **S** | All four strong. Mainstream pro traders use it. Build it. |
+| **A** | Validated by mainstream sources but with one constraint (narrower window, partial overlap, harder data). |
+| **C** | Rejected with reason. Documented to prevent re-proposal. |
 
-## Considered, NOT pursued (B / C-tier)
-
-| Category | Name | Tier | Reason rejected |
-|---|---|---|---|
-| Entry | Volume Spike Scanner | B | Too easy to bait (wash-trading triggers same signal as organic momentum). Existing scanner already weights volume. No distinct primary signal. |
-| Entry | Twitter Sentiment Pump | C | By the time sentiment lags into the framework, the move is done. Belongs as a scoring input (already in `SocialData`), not a trigger. |
-| Entry | Whale Wallet Mirror (single whale) | C | Subset of KOL copy-trade — a whale is just a `KOLRegistry` entry with a `whale` tier. No new agent needed. |
-| Execution | MEV / Sandwich Bot | C | Out of scope: execution-layer concern (transaction ordering). Framework is decide-only. |
+B-tier intentionally absent — anything that would land there is either a config knob on an S/A agent or belongs in C.
 
 ---
 
-## Detailed specs (S-tier)
+## S-tier — proven by mainstream Solana pro traders
 
-### PL1 — Position Lifecycle Helpers
+| Strategy | Signal mechanic | Implemented |
+|---|---|---|
+| **Multi-aspect pre-trade scanner** | AI-first analysis combining safety (contract, holder concentration), market structure, wallet intel, and social signals into a single verdict on a candidate stream. Validated as "real edge is filtering bad setups before swap" (DEXTools 2026). | ✅ [build_scanner](../strategies/agents/scanner.py) |
+| **Speed sniper with structural gates** | Sub-ms rule path on pre-filtered tokens; optional LLM decide inside deterministic guardrail. Used universally by competitive Solana bots in 2026. | ✅ [build_sniper](../strategies/agents/sniper.py) |
+| **KOL copy-trade (curated)** | Copy buys from a hand-curated whitelist of historically-profitable wallets, sized by per-wallet `hit_rate` × `tier`. Used by GMGN, Cielo, Axiom users as a primary alpha source. | ✅ [build_kol_copytrade](../strategies/agents/kol_copytrade.py) |
+| **Pump.fun graduation snipe** | Enter in the 5–30s window after a token graduates to Raydium; gate on bonding-curve fill speed, unique buyers, LP burned, premium %. | ✅ [build_graduation](../strategies/agents/graduation.py) |
+| **Smart money confluence (multi-wallet)** | Fire when ≥ N pre-vetted smart wallets accumulate the same token within a rolling window (mainstream tells: "5+ smart wallets scooping a token over a week"). Multi-wallet correlation — much higher precision than single-wallet copy. | 📅 planned — S5 |
+| **Early-stage dip buy** (post-launch OR post-graduation) | Wait for the dump wave to settle, then enter when sells thin out, holders retain, and unique-buyer count starts rising again. Two events share one signal mechanic — selected via `event_type ∈ {launch, graduation}`: **launch** = wait 1–10 min for sniper/bundler dump to clear (token still in BC); **graduation** = wait for early-BC-buyer TP wave after Raydium migration. Distinct from speed sniper (waits) and graduation snipe (also waits, opposite direction). | ⬜ not built |
 
-**Category:** Position management · **Tier:** S · **Status:** planned · **Spec:** TBD
+## A-tier — validated, narrower constraints
 
-**Boundary check (NON-NEGOTIABLE):** Returns *recommendations*. Bot owns the open position, live price stream, MEV, slippage, signing, persistence. Framework holds no position state across calls — bot pushes a fresh `PositionContext` per tick.
+| Strategy | Signal mechanic | Implemented |
+|---|---|---|
+| **Organic growth detector** | Watch the post-launch time-series: organic growth = steady climb + healthy pullbacks + rising unique-buyer count. Manipulation tell = vertical line with zero sells. Distinct from snapshot scanner (chart-pattern feature set on time series). Useful as a triage filter that promotes scanner candidates to higher-confidence buys. | ⬜ not built |
 
-**Proposed shape:**
+A-tier is intentionally short. If a strategy is worth doing, it's almost always S; the few that don't qualify usually overlap heavily with an S row.
 
-```python
-class PositionState(BaseModel):
-    entry_price: float
-    entry_size: float
-    current_price: float
-    pnl_pct: float
-    holding_seconds: float
-    peak_pnl_pct: float
-    drawdown_from_peak_pct: float
+## C-tier — rejected with reason (do NOT re-propose without new evidence)
 
-class LifecycleConfig(BaseModel):
-    take_profit_pcts: list[float] = [0.5, 1.0, 3.0]   # scale-out ladder
-    stop_loss_pct: float = -0.3
-    trailing_drawdown_pct: float = 0.5
-    max_hold_seconds: float = 3600
-    decision_mode: Literal["rule", "llm", "hybrid"] = "rule"
-
-@dataclass
-class PositionContext:
-    token: TokenInput
-    position: PositionState
-    config: LifecycleConfig = field(default_factory=LifecycleConfig)
-```
-
-Output: `Decision(action ∈ {hold, take_profit, stop_loss, scale_out, exit_full})` with `size` = how much to sell.
-
-**Why distinct from entry agents:** different input shape (`PositionContext`), different output action space (sell-side ladder), different features (PnL trajectory, time-in-trade, drawdown-from-peak).
-
-### S5 — Smart Money Confluence
-
-**Category:** Entry · **Tier:** S · **Status:** planned · **Spec:** TBD
-
-**Proposed shape:**
-
-```python
-class SmartWalletBuy(BaseModel):
-    wallet: str
-    sol_amount: float
-    detected_at_ts: float
-
-class SmartConfluenceEvent(BaseModel):
-    mint: str
-    buys: list[SmartWalletBuy]
-    window_seconds: float
-    first_buy_ts: float
-    distinct_smart_wallets: int
-
-class SmartConfluenceConfig(BaseModel):
-    min_distinct_wallets: int = 3
-    max_window_seconds: float = 120.0
-    min_wallet_hit_rate: float = 0.5
-    require_no_bundler_overlap: bool = True
-    decision_mode: Literal["rule", "llm", "hybrid", "hybrid_audit"] = "rule"
-```
-
-Reuses sniper's `fast_safety` + a generalized `market_gate`. New `SmartWalletRegistry` (parallel to `KOLRegistry`, sourced from `KnowledgePack`).
-
-**Why distinct from KOL Copy-Trade:** KOL = single-wallet copy. Confluence = multi-wallet correlation (cluster of independent smart wallets converging). Different trigger semantics, different config (min_distinct_wallets, window), different failure modes (one rogue wallet doesn't fire S5).
+| Strategy | Why rejected |
+|---|---|
+| **Twitter sentiment as primary trigger** | Lagging signal. By the time sentiment data lands, the move is done. Mainstream sources treat social as confirmation, not trigger. Belongs as scoring input (already in `SocialData`). |
+| **Single influencer / KOL mention** | Single-source social signals are noisy and front-runnable. Edge exists only inside multi-source confluence — covered by S-tier "Smart money confluence". |
+| **MEV / Jito front-run / sandwich** | Execution-layer concern (transaction ordering, validator tipping), not decision-layer. Edge belongs to lowest-latency RPC and validator relationships, not the framework. Out of scope. |
+| **Single whale wallet mirror** | Strict subset of KOL copy-trade. A whale is just an entry in `KOLRegistry` with a different tier label. No new agent needed. |
+| **Generic "AI predict price" black box** | No durable edge in memecoins without structural features the S-tier rows already capture. LLM-on-price-history adds noise, not alpha. |
+| **Honeypot / rug detection as a "strategy"** | Defensive safety primitive every entry agent already runs. Not a strategy. Lives in the safety layer (`safety_gate` / `fast_safety`). |
 
 ---
 
-## Three-question gate for proposing any new agent
+## Three-question gate for proposing a new strategy
 
-Before drafting a spec, answer all three. Fail one → don't propose.
+Before drafting a spec, all three must pass.
 
 | # | Question | Fail = |
 |---|---|---|
-| 1 | **Distinct input shape** — needs a context not in `{TradingContext, KOLContext, GraduationContext, PositionContext}`? | Config tweak on existing agent, not a new agent |
-| 2 | **Distinct primary signal** — predictive feature no existing agent uses as primary trigger? "Already a scoring input" doesn't count. | Add as scoring input to existing agent |
-| 3 | **Boundary-safe** — framework can define it without subscribing, holding state, or signing? | Kill at the boundary — that's a bot-layer concern |
+| 1 | **Mainstream-validated** — does at least one credible source (DEXTools, CoinLedger, on-chain analytics blog, prominent trader) describe pro traders using this in 2026 Solana memecoin context? | Speculative — don't add. |
+| 2 | **Distinct primary signal** — predictive feature no S/A row uses as primary trigger? "Already a scoring input" doesn't count. | Add as input to existing agent. |
+| 3 | **Boundary-safe** — definable without subscribing, holding state, or signing? | Kill at boundary; that's a bot-layer concern. |
 
-If all three pass: file a spec in [docs/plans/](plans/) (NOT `docs/superpowers/` — retired) and add a row to the appropriate table above.
+Pass all three → add a row at the right tier + open a design doc in [docs/plans/](plans/).
+
+---
+
+## Notes
+
+- **Position management** (TP/SL/scale-out helpers like "sell half at 2x to recoup initials") is NOT a strategy — it's a risk-management primitive universal to every trader. Tracked in [CAPABILITIES.md §6](CAPABILITIES.md#6-roadmap) as PL1.
+- **Defensive gates** (rug detection, blacklist, contract safety) are safety primitives every entry agent reuses. Not strategies.
+- This catalog is opinionated and tied to the **2026 Solana memecoin meta**. Crowd saturation moves tiers in months — revisit on every release.
