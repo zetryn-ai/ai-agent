@@ -177,19 +177,21 @@ Structured per-node logging as JSON. `Hooks` protocol (`on_node_start`, `on_node
 
 ### Trading domain (`trading/schemas.py`)
 
-Shared contract: `TradingContext`, `Decision`, `DataProvider` protocol, market/holder/contract/social data shapes, `ScannerConfig`, `SniperConfig`, `KOLContext`, `KOLProfile`, `KOLAnalystVerdict`. This is the *shape agreement* between the bot and the framework.
+Shared contract: `TradingContext`, `Decision`, `DataProvider` protocol, market/holder/contract/social data shapes, `ScannerConfig`, `SniperConfig`, `KOLContext`, `KOLProfile`, `KOLAnalystVerdict`. v0.12.0 added graduation shapes: `GraduationEvent`, `GraduationConfig`, `GraduationContext`, `GraduationVerdict`. v0.13.0 added position lifecycle shapes: `PartialExit`, `PositionState`, `LifecycleConfig`, `PositionContext`, `LifecycleVerdict`; also extended `Decision.action` with `"hold"`, `"take_profit"`, `"scale_out"`, `"exit_full"`. This is the *shape agreement* between the bot and the framework.
 
 ### Strategies (`strategies/`)
 
 - `strategies/providers.py` — `MockDataProvider` and sample fixtures for offline tests/demos.
 - `strategies/kol_registry.py` — `KOLRegistry`: read-only typed view of `kol_whitelist.json` from a `KnowledgePack`. `KOLRegistry.from_pack(pack)` deserialises per-wallet `KOLProfile` entries plus global thresholds. Bot computes scores/hit-rates offline and ships the JSON; framework only reads.
-- `strategies/nodes/` — `filters.py` (safety/market/social rule nodes), `decide.py` (aggregate → `Decision`), `prompts.py` (narrative LLM prompts), `sniper_nodes.py`, `kol_nodes.py` (KOL fast_safety / kol_quality / fast_market / sizing / kol_analyst_prompt / kol_audit_dispatch rule nodes), `analyst.py` (scanner/sniper analyst LLM prompt builders).
+- `strategies/nodes/` — `filters.py` (safety/market/social rule nodes), `decide.py` (aggregate → `Decision`), `prompts.py` (narrative LLM prompts), `sniper_nodes.py`, `kol_nodes.py` (KOL fast_safety / kol_quality / fast_market / sizing / kol_analyst_prompt / kol_audit_dispatch rule nodes), `analyst.py` (scanner/sniper analyst LLM prompt builders), `graduation_nodes.py` (v0.12.0: graduation_gate, market_gate, rule_size_and_buy, graduation_prompt, graduation_guardrail, make_audit_dispatch), `lifecycle_nodes.py` (v0.13.0: emergency_exit, hard_stop_loss, time_stop, trailing_stop, tp_ladder, rule_hold; two emit patterns: `_hard_emit` short-circuits to audit/END, `_soft_emit` falls through for chaining).
 - `strategies/agents/scanner.py` — `build_scanner(llm)` returns a compiled `Graph`.
 - `strategies/agents/sniper.py` — `build_sniper(llm)` returns a compiled `Graph`.
 - `strategies/agents/kol_copytrade.py` — `build_kol_copytrade(knowledge_pack|registry, *, mode, llm_client, decision_log, ...)` returns a compiled `Graph`. Three modes selectable at build time:
   - `"rule"` (default) — pure rule path, no LLM, target latency <1ms.
   - `"confirmed"` — rules gate first, then `kol_analyst` LLMNode approves/vetoes and sets `size_multiplier ∈ [0, 1.5]`. When `decision_log` is provided, `ReflectiveNode("reflect")` runs before the analyst (K7 reflective loop).
   - `"audit"` — rule sizing decides instantly (bot gets `Decision` immediately); `kol_audit_dispatch` fires an async LLM audit task the bot reads later for offline tuning.
+- `strategies/agents/graduation.py` — `build_graduation(llm_client, *, model, knowledge_pack, decision_log, ...)` returns a compiled `Graph`. Four decision modes: `rule` / `llm` / `hybrid` / `hybrid_audit`. Graph: `fast_safety → graduation_gate → market_gate → [reflect] → grad_decide | rule_buy → [audit_dispatch] → END`.
+- `strategies/agents/lifecycle.py` — `build_lifecycle(llm_client, *, model, knowledge_pack, decision_log, ...)` returns a compiled `Graph` for position management (PL1). Gates run in order: `emergency_exit → hard_stop_loss → time_stop → trailing_stop → tp_ladder → rule_hold`. Hard exits (emergency/SL/time) short-circuit via `_hard_emit`; soft exits (trailing/TP) fall through via `_soft_emit` enabling audit chaining.
 
 ## Key patterns
 

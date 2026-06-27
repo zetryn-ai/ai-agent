@@ -1,7 +1,7 @@
-# Graph Report - ai-agent-trading  (2026-06-27)
+# Graph Report - ai-agent  (2026-06-27)
 
 ## Corpus Check
-- 114 files · ~73,848 words
+- 114 files · ~73,752 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -10,7 +10,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `f42ffba0`
+- Built from commit: `d142e989`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -335,7 +335,7 @@ Nodes (18): 1. Capability Matrix, 2. Gap Analysis (before P1–P4), 3. Foundatio
 
 ### Community 48 - "Community 48"
 Cohesion: 0.11
-Nodes (17): Architecture, Auth seam (`zetryn/auth/`), Backtest (`zetryn/backtest/`), Commands, Commit identity (MUST ASK BEFORE EVERY COMMIT/PUSH/PR), Core engine (`zetryn/core/`), Dependency rules (strict), Documentation conventions (MUST FOLLOW) (+9 more)
+Nodes (17): Architecture, Auth seam (`zetryn/auth/`), Backtest (`zetryn/backtest/`), Commands, Commit identity (ROLLING RANDOM — no need to ask), Core engine (`zetryn/core/`), Dependency rules (strict), Documentation conventions (MUST FOLLOW) (+9 more)
 
 ### Community 49 - "Community 49"
 Cohesion: 0.15
@@ -454,7 +454,7 @@ Cohesion: 0.50
 Nodes (4): [0.8.0] — 2026-06-25, Added, Backwards compatibility, Notes
 
 ## Knowledge Gaps
-- **185 isolated node(s):** `Design notes`, `Added`, `Fixed`, `Added`, `Notes` (+180 more)
+- **185 isolated node(s):** `Documentation conventions (MUST FOLLOW)`, `Framework Boundary (NON-NEGOTIABLE — read first, every session)`, `Commit identity (ROLLING RANDOM — no need to ask)`, `Commands`, `Dependency rules (strict)` (+180 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **13 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -462,11 +462,11 @@ Nodes (4): [0.8.0] — 2026-06-25, Added, Backwards compatibility, Notes
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `State` connect `State Machine & Memory` to `LLM Key Pool & Config`, `LLM Client & Guardrails`, `KOL Copy-Trade Example`, `KOL Strategy Agent`, `Backtester & Runner`, `Core Graph & Edges`, `Scanner Agent & Analyst`, `Analyst Prompt Engine`, `Router Tier & Tests`, `Agent Registry & Graph`, `KOL Nodes & Fast Market`, `Sniper Agent`, `Tool Use Node & Tests`, `KOL Confirmed Mode Tests`, `Decision Log & Reflection`, `Sniper Nodes & Decisions`, `KOL Reflective Loop Tests`, `Community 26`, `Community 27`, `Community 29`, `Community 34`, `Community 36`, `Community 38`, `Community 39`, `Community 40`, `Community 42`, `Community 46`, `Community 49`, `Community 54`, `Community 55`, `Community 59`, `Community 72`, `Community 76`, `Community 77`, `Community 78`, `Community 79`, `Community 80`, `Community 82`, `Community 85`, `Community 86`?**
-  _High betweenness centrality (0.150) - this node is a cross-community bridge._
+  _High betweenness centrality (0.149) - this node is a cross-community bridge._
 - **Why does `LLMResult` connect `LLM Client & Guardrails` to `LLM Key Pool & Config`, `KOL Audit Mode Tests`, `Rate Limit & LLM Router`, `KOL Strategy Agent`, `Backtester & Runner`, `State Machine & Memory`, `Examples & Shared Types`, `Scanner Agent & Analyst`, `Analyst Prompt Engine`, `Router Tier & Tests`, `Sniper Agent`, `Tool Use Node & Tests`, `KOL Confirmed Mode Tests`, `KOL Reflective Loop Tests`, `LLM Router & Entry Tests`, `Community 29`, `Community 34`, `Community 36`, `Community 40`, `Community 46`, `Community 59`, `Community 72`, `Community 74`, `Community 82`, `Community 83`, `Community 85`?**
-  _High betweenness centrality (0.131) - this node is a cross-community bridge._
-- **Why does `Message` connect `LLM Client & Guardrails` to `LLM Key Pool & Config`, `KOL Audit Mode Tests`, `Rate Limit & LLM Router`, `Knowledge Pack System`, `KOL Strategy Agent`, `Backtester & Runner`, `State Machine & Memory`, `Examples & Shared Types`, `Scanner Agent & Analyst`, `Analyst Prompt Engine`, `Router Tier & Tests`, `Sniper Agent`, `Tool Use Node & Tests`, `KOL Confirmed Mode Tests`, `KOL Reflective Loop Tests`, `LLM Router & Entry Tests`, `Community 29`, `Community 34`, `Community 36`, `Community 40`, `Community 46`, `Community 59`, `Community 72`, `Community 74`, `Community 82`, `Community 83`, `Community 85`?**
-  _High betweenness centrality (0.066) - this node is a cross-community bridge._
+  _High betweenness centrality (0.130) - this node is a cross-community bridge._
+- **Why does `State` connect `Community 41` to `Community 35`, `Community 37`, `Community 45`, `KOL Nodes & Fast Market`, `Community 51`, `Sniper Nodes & Decisions`, `Community 28`?**
+  _High betweenness centrality (0.068) - this node is a cross-community bridge._
 - **Are the 180 inferred relationships involving `LLMResult` (e.g. with `LLMResult` and `Message`) actually correct?**
   _`LLMResult` has 180 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 206 inferred relationships involving `Message` (e.g. with `DecisionFallbackFn` and `LLMResult`) actually correct?**
