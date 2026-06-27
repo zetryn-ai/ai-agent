@@ -5,6 +5,61 @@ All notable changes to `zetryn-trading` will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.0] — 2026-06-27
+
+M14 ships: **Multi-agent panel** (rule-based orchestrator). Two new node
+types — `PanelNode` (intermediate) and `PanelDecisionNode` (terminal) —
+run multiple specialist sub-graphs and merge their verdicts via a
+user-supplied aggregator. Orchestration stays deterministic and auditable;
+LLM-as-orchestrator (Anthropic-style adaptive dispatch) is explicitly
+out of scope and deferred to v3.0.0.
+
+### Added
+- **`zetryn.panel.PanelNode`** — intermediate panel; aggregator result is
+  written to `state.scratch[output_key]`.
+- **`zetryn.panel.PanelDecisionNode`** — terminal panel; aggregator result
+  becomes `state.output` and the node returns `Command(goto=...)`.
+- **Two execution modes**: `parallel` (default, `asyncio.gather` for
+  latency-optimal merge of independent specialists) and `sequential`
+  (ordered execution so specialist N+1 can read prior results via the
+  reserved `scratch["_panel"]` channel).
+- **Failure handling**: optional `required=[...]` parameter — failure of a
+  required specialist raises `PanelExecutionError`; failure of any other
+  specialist sets `results[name] = None` and stashes the error string at
+  `state.scratch["_panel_failures"][panel_name][specialist_name]`.
+- **Short-circuit (sequential only)**: optional `short_circuit_on(results,
+  state) -> Any | None` predicate; returning non-None aborts the panel,
+  uses that value as the panel output, and the aggregator is NOT called.
+  Validated at construction — `parallel` + `short_circuit_on` raises
+  `ValueError` (would be silently ignored otherwise).
+- **`zetryn.panel.single_llm_specialist(...)` helper** — builds a 1-node
+  `Graph` wrapping a single `LLMNode` for the common "specialist is just
+  one LLM call" case. Avoids boilerplate without compromising the
+  "specialist is always a Graph" invariant.
+
+### Design
+- Six brainstormed decisions documented in
+  [docs/plans/2026-06-27-multi-agent-panel-m14.md](docs/plans/2026-06-27-multi-agent-panel-m14.md):
+  rule-based orchestrator (A), configurable parallel/sequential (C),
+  specialist = sub-graph (A), auto-injected `scratch["_panel"]` channel
+  (B), two-class mirror of LLM pair (B), graceful default + escape hatch
+  (B).
+- Boundary preserved: framework gains no agency — orchestration logic is
+  user-supplied Python, specialists are user-supplied sub-graphs, and the
+  framework remains a transparent computation engine.
+
+### Tests
+- 28 new tests (parallel happy/isolation/failure, sequential happy/
+  `_panel` propagation/short-circuit, decision node terminate, validation
+  guards, helper).
+- Total: **464 passing** (up from 436).
+
+### Release placement
+This release lives on branch `feat/dev/multi-agent-panel`. Final placement
+relative to v1.0.0 is TBD — v1.0.0 stable is ~90% ready, real-source
+testing is the remaining gate. M14 may ship in v1.1.0 instead of v1.0.0
+depending on the broader release schedule.
+
 ## [0.17.0] — 2026-06-27
 
 M13 ships: **YAML graph loader**. Declarative graph specs — load a strategy
