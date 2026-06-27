@@ -1,27 +1,27 @@
-# Zetryn Trading
+# Zetryn AI Agent Trading Framework
 
-**AI Agent Trading from Zetryn AI.**
+**AI Agent Trading Framework from Zetryn AI.**
 
 > [!WARNING]
-> **🚧 Alpha — work in progress.** Zetryn Trading is in active development.
+> **🚧 Alpha — work in progress.** Zetryn AI Agent Trading Framework is in active development.
 > Public APIs may change between minor versions, the AI analyst prompts are
 > still being tuned with real outcome data, and the Zetryn platform
 > (subscription auth, hosted Hardes / Medifus / Easfus models) is **not yet
-> live**. Today the library runs on public LLM providers (Groq / Gemini /
+> live**. Today the framework runs on public LLM providers (Groq / Gemini /
 > OpenRouter / OpenAI / Anthropic) with your own keys.
 >
 > **Recommended use right now:** development, research, paper trading,
 > backtests, dogfooding inside your own bot. **Not yet recommended for
 > unattended live trading with real funds.** No warranty — see [LICENSE](LICENSE).
 
-A Python library that turns raw Solana memecoin data into structured,
+A Python framework that turns raw Solana memecoin data into structured,
 auditable trading decisions. You bring the bot, the wallet, and the RPC;
-Zetryn Trading provides the **agent** — a graph of LLM analysts and hard-rule
-guardrails.
+Zetryn AI Agent Trading provides the **decision engine** — eight reference
+agents built from a graph of LLM analysts and hard-rule guardrails.
 
 ```
-BOT (yours)                   ZETRYN TRADING (this library)
-─────────────                 ─────────────────────────────────────
+BOT (yours)                   ZETRYN AI AGENT TRADING (this framework)
+─────────────                 ─────────────────────────────────────────
 gather token data  ──push──>  safety_gate → intel_gate → market_gate
                                                   │
                                          ┌────────┘
@@ -38,8 +38,8 @@ gather token data  ──push──>  safety_gate → intel_gate → market_gate
 execute (or not) <───────────────────────────────┘
 ```
 
-Zetryn Trading **decides**; the bot **executes**. The library never holds your
-private key and never touches the chain.
+Zetryn AI Agent Trading **decides**; the bot **executes**. The framework never
+holds your private key and never touches the chain.
 
 ---
 
@@ -114,20 +114,62 @@ tools mid-decision on its own) is on the roadmap.
 
 ---
 
-## Two agents, four sniper modes
+## Eight reference agents
+
+All agents share the same contract: the bot fills an input context, the
+framework returns a `Decision`. All agents accept `decision_log` +
+`reflect_window` for the reflective learning loop (see
+[Reflective loop](#reflective-loop) below).
+
+| # | Agent | Strategy | Modes | Builder |
+|---|---|---|---|---|
+| A | **Scanner** | AI-first token discovery | `analyst` | `build_scanner` |
+| B | **Sniper** | Sub-ms launch entry | `rule` / `llm` / `hybrid` / `hybrid_audit` | `build_sniper` |
+| C | **KOL Copy-Trade** | Copy pre-vetted KOL wallets | `rule` / `confirmed` / `audit` | `build_kol_copytrade` |
+| D | **Graduation Snipe** | Pump.fun → Raydium migration entry | `rule` / `llm` / `hybrid` / `hybrid_audit` | `build_graduation` |
+| E | **Position Lifecycle** | Hold / TP / scale-out / emergency exit | `rule` / `llm` / `hybrid` / `hybrid_audit` | `build_lifecycle` |
+| F | **Smart Money Confluence** | ≥N pre-vetted wallets accumulate same token | `rule` / `llm` / `hybrid` / `hybrid_audit` | `build_confluence` |
+| G | **Early-Stage Dip Buy** | Post-dump recovery entry | `rule` / `llm` / `hybrid` / `hybrid_audit` | `build_dip_buy` |
+| H | **Organic Growth Detector** | Post-launch chart-pattern triage filter | `rule` / `llm` / `hybrid` / `hybrid_audit` | `build_organic_detector` |
+
+### Decision modes
+
+Six of the eight agents (B–E, G–H) share a four-mode shape. Pick at build
+time via the agent's `Config.decision_mode`:
+
+| Mode | Latency | LLM in hot path? | When to use |
+|---|---|---|---|
+| `rule` (default) | < 1 ms | No | Production, latency-critical paths |
+| `llm` | 200–500 ms | Yes (decides) | Richer reasoning, older tokens |
+| `hybrid` | 200–500 ms | Yes + rule guardrail | LLM decides, rules veto rug / cap size |
+| `hybrid_audit` | **< 1 ms + async AI verify** | Async (non-blocking) | **Best of both worlds** |
+
+**`hybrid_audit`** is the speed-intelligence bridge: the rule path returns a
+`Decision` instantly, then a background coroutine runs the LLM to
+second-opinion it. Result lands in `state.scratch["audit_task"]` for the bot
+to `await` and log. The bot trades on the rule decision immediately — no LLM
+in the hot path.
+
+Scanner (Agent A) uses a single `analyst` mode — it is the deliberate
+"should we buy this?" path, always LLM-driven.
+
+KOL Copy-Trade (Agent C) uses a three-mode variant: `rule` / `confirmed` /
+`audit`. No standalone `llm` mode — KOL validation gates first, then an LLM
+approves or vetoes in `confirmed` mode.
+
+---
 
 ### Agent A — Scanner
 
-Slow path for "should we buy this?" Takes 1–3s, fully LLM-driven analysis.
+Slow path for "should we buy this?" Takes 1–3 s, fully LLM-driven analysis.
 Returns `Decision` with the full per-aspect `FullAnalysis` attached.
 
 ```python
 from strategies import build_scanner
-from trading import ScannerConfig, TradingContext
+from trading import TradingContext
 from zetryn.core import State
 from zetryn.llm import OpenAICompatibleClient, ProviderConfig, GROQ_BASE_URL
 
-# 1. Pick an LLM provider (free tier: Groq / Gemini / OpenRouter)
 provider = ProviderConfig(
     name="groq",
     base_url=GROQ_BASE_URL,
@@ -136,10 +178,7 @@ provider = ProviderConfig(
 )
 llm = OpenAICompatibleClient(provider)
 
-# 2. Build the agent
 scanner = build_scanner(llm, model="llama-3.3-70b-versatile")
-
-# 3. Run it — bot pushes a fully-formed TokenInput
 state = await scanner.run(State(context=TradingContext(token=token_input)))
 decision = state.output
 
@@ -148,27 +187,15 @@ print(decision.confidence)    # 0..1
 print(decision.analysis)      # FullAnalysis with per-aspect verdicts
 ```
 
+---
+
 ### Agent B — Sniper
 
-Fast path for "BUY NOW or skip." Four modes, picked via `SniperConfig.decision_mode`:
-
-| Mode | Latency | LLM in hot path? | When to use |
-|---|---|---|---|
-| `rule` (default) | < 1 ms | No | Production sniper, ultra-fresh launches |
-| `llm` | 200-500 ms | Yes (decides) | Tokens older than 1 minute, LLM-driven entry |
-| `hybrid` | 200-500 ms | Yes + rule guardrail | LLM decides, rules veto rug / cap size |
-| `hybrid_audit` | **< 1 ms decision + async AI verify** | Async (non-blocking) | **Best of both worlds** |
-
-**`hybrid_audit`** is the AI-meets-speed bridge: the rule path decides instantly,
-then a background coroutine runs the LLM to second-opinion that decision. Result
-is stored in `state.scratch["audit_task"]`, ready to be written to `DecisionLog`
-for offline analysis (where do rule and AI disagree? what does that mean for
-tuning?). The bot trades immediately on the rule decision — no LLM in the hot
-path.
+Fast path for "BUY NOW or skip." Targets ultra-fresh launches.
 
 ```python
 from strategies import build_sniper
-sniper = build_sniper(llm)  # llm only used for audit / llm / hybrid modes
+sniper = build_sniper(llm)  # llm only used in audit / llm / hybrid modes
 
 state = await sniper.run(State(context=TradingContext(
     token=token, config=SniperConfig(decision_mode="hybrid_audit"),
@@ -177,7 +204,7 @@ state = await sniper.run(State(context=TradingContext(
 # Decision returned in <1 ms — trade now.
 bot.execute(state.output)
 
-# Then await the audit verdict (no rush).
+# Await the audit verdict later.
 verdict = await state.scratch["audit_task"]
 await decision_log.log(state.run_id, {
     **state.output.model_dump(),
@@ -185,27 +212,127 @@ await decision_log.log(state.run_id, {
 })
 ```
 
-**Reflective sniper (v0.11.0):** pass a `DecisionLog` at build time and the
-sniper's LLM path becomes loss-aware — a `ReflectiveNode` runs between
-`fast_market` and the LLM decider, compiling a `LESSONS from recent snipe
-outcomes` block from the last N decisions. The LLM conditions on real
-historical losses, not just the static prompt.
+---
+
+### Agent C — KOL Copy-Trade
+
+Fires when a pre-vetted KOL wallet buys. Three modes:
+
+- `rule` — whitelist check only, < 1 ms
+- `confirmed` — rules gate first, then LLM analyst approves/vetoes and adjusts `size_multiplier ∈ [0, 1.5]`
+- `audit` — rule decides instantly, async LLM audit fires in background
+
+When `decision_log` is provided in `confirmed` mode, a `ReflectiveNode` runs
+before the analyst (the learning loop is active).
+
+```python
+from strategies import build_kol_copytrade
+agent = build_kol_copytrade(
+    knowledge_pack=pack,
+    mode="confirmed",
+    llm_client=llm,
+    decision_log=log,
+)
+```
+
+---
+
+### Agent D — Graduation Snipe
+
+Entry at Pump.fun → Raydium migration. Evaluates liquidity lock, bundler
+absence, and market quality in the narrow window after the graduation event.
+
+```python
+from strategies import build_graduation
+agent = build_graduation(llm_client=llm, model="llama-3.3-70b-versatile")
+```
+
+---
+
+### Agent E — Position Lifecycle
+
+Manages an open position: hold / take-profit / scale-out / emergency exit.
+Hard exits (emergency, SL, time) short-circuit the graph immediately; soft
+exits (trailing TP) fall through for audit chaining. The framework holds
+**no position state** across calls — the bot pushes a fresh `PositionContext`
+per tick.
+
+```python
+from strategies import build_lifecycle
+agent = build_lifecycle(llm_client=llm, decision_mode="hybrid_audit")
+```
+
+---
+
+### Agent F — Smart Money Confluence
+
+Fires when ≥ N pre-vetted smart wallets have accumulated the same token
+within a rolling window. Accepts an optional `SmartWalletRegistry` for
+whitelist-based wallet scoring; falls back to `ConfluenceConfig` per-wallet
+floors when omitted.
+
+```python
+from strategies import build_confluence
+agent = build_confluence(llm_client=llm, registry=smart_wallet_registry)
+```
+
+---
+
+### Agent G — Early-Stage Dip Buy
+
+Post-launch or post-graduation dump recovery. Enters when sell pressure
+thins out, holders retain, and unique buyers recover. Gate chain:
+`timing_gate → dip_gate → recovery_gate → market_gate`.
+
+```python
+from strategies import build_dip_buy
+agent = build_dip_buy(llm_client=llm)
+```
+
+---
+
+### Agent H — Organic Growth Detector
+
+Triage filter — classifies a token's post-launch time-series as `organic`,
+`suspicious`, or `manipulated`. Returns `Decision.action` in
+`{"buy", "skip", "abort"}` so the bot knows whether to promote, queue, or
+drop the candidate. `Decision.flags["classification"]` carries the label;
+`Decision.scores["organic_score"]` carries the raw score for calibration.
+
+In `hybrid_audit` mode, all three classification outcomes trigger the audit
+task — demotions are as worth auditing as entries.
+
+```python
+from strategies import build_organic_detector
+agent = build_organic_detector(llm_client=llm)
+```
+
+---
+
+### Reflective loop
+
+Pass a `DecisionLog` at build time to any agent and the LLM path becomes
+loss-aware. A `ReflectiveNode` runs before the analyst and prepends a
+`LESSONS from recent outcomes` block compiled from the last N decisions.
+The LLM conditions on real historical losses, not just the static prompt.
 
 ```python
 from zetryn.memory import DecisionLog, JSONFileStore
 
-log = DecisionLog(JSONFileStore("./sniper-decisions.json"))
+log = DecisionLog(JSONFileStore("./decisions.json"))
 
-# Reflective loop active in llm / hybrid modes only.
-# hybrid_audit intentionally skips reflect — the sub-ms rule path must not
-# block on a memory read; the bot can reflect offline in that mode.
-sniper = build_sniper(
+agent = build_sniper(
     llm,
     decision_log=log,
-    reflect_window=20,      # how many past decisions to look at
-    reflect_top_k=5,        # top-k loser patterns to surface
+    reflect_window=20,   # how many past decisions to inspect
+    reflect_top_k=5,     # top-k loser patterns to surface
 )
 ```
+
+All eight agents accept the same `decision_log` / `reflect_window` /
+`reflect_feature_keys` / `reflect_top_k` parameters. `hybrid_audit`
+intentionally skips reflection on the fast path — the sub-ms rule path
+must not block on a memory read; the bot can reflect offline in that mode.
 
 ---
 
@@ -334,7 +461,7 @@ schemas if your domain isn't Solana memecoins.
 
 ## Push vs pull
 
-Zetryn Trading supports both data-ingress patterns:
+Zetryn AI Agent Trading supports both data-ingress patterns:
 
 - **Push** (recommended for production): bot fetches data, builds `TokenInput`,
   calls `agent.run(State(context=TradingContext(token=token_input)))`. Latency
@@ -348,7 +475,7 @@ Test, backtest, and live are the same graph — only the provider changes.
 
 ## Pre-filter at the bot
 
-Zetryn Trading is cheap to run, but **filling `TokenInput` is not** — Helius,
+Zetryn AI Agent Trading is cheap to run, but **filling `TokenInput` is not** — Helius,
 GMGN, Twitter, DexScreener all cost API quota. Pre-filter at the bot:
 
 ```python
@@ -367,9 +494,9 @@ discovery.
 
 ---
 
-## What Zetryn Trading owns vs what the bot owns
+## What Zetryn AI Agent Trading owns vs what the bot owns
 
-| Zetryn Trading | Bot |
+| Zetryn AI Agent Trading | Bot |
 |---|---|
 | Graph orchestration | RPC, wallet, signing |
 | LLM calls (advisor / analyst / decider) | Hot loop, mempool watching |
@@ -378,8 +505,8 @@ discovery.
 | Observability (trace, hooks) | Pre-filter, fetch budgeting |
 | Backtest harness | Live market data feeds |
 
-Boundary is non-negotiable: **Zetryn Trading decides, bot executes.** Never the
-reverse.
+Boundary is non-negotiable: **Zetryn AI Agent Trading decides, bot executes.**
+Never the reverse.
 
 ---
 
@@ -395,18 +522,18 @@ a snapshot — the table over there is what gets updated on every release.
 What's built (v0.16.0):
 
 - Core engine, LLM layer, tools, memory, observability, auth seam, backtest
-- **Nine reference strategy agents — all sharing a consistent four-mode shape:**
+- **Eight reference agents** (see [Eight reference agents](#eight-reference-agents) above for details):
 
-  | Agent | Strategy | Modes | Builder |
-  |---|---|---|---|
-  | Scanner | AI-first discovery | `analyst` (single LLM call) | `build_scanner` |
-  | Sniper | Sub-ms launch entry | `rule` / `llm` / `hybrid` / `hybrid_audit` | `build_sniper` |
-  | KOL Copy-Trade | Copy pre-vetted KOL wallets | `rule` / `confirmed` / `audit` | `build_kol_copytrade` |
-  | Graduation Snipe | Pump.fun → Raydium migration entry | `rule` / `llm` / `hybrid` / `hybrid_audit` | `build_graduation` |
-  | **Position Lifecycle** | Hold / TP / scale-out / emergency exit | `rule` / `llm` / `hybrid` / `hybrid_audit` | `build_lifecycle` |
-  | **Smart Money Confluence** | ≥N pre-vetted wallets accumulate same token | `rule` / `llm` / `hybrid` / `hybrid_audit` | `build_confluence` |
-  | **Early-Stage Dip Buy** | Post-dump recovery entry (launch or graduation) | `rule` / `llm` / `hybrid` / `hybrid_audit` | `build_dip_buy` |
-  | **Organic Growth Detector** | Post-launch chart-pattern triage filter | `rule` / `llm` / `hybrid` / `hybrid_audit` | `build_organic_detector` |
+  | # | Agent | Strategy | Modes | Builder |
+  |---|---|---|---|---|
+  | A | Scanner | AI-first discovery | `analyst` | `build_scanner` |
+  | B | Sniper | Sub-ms launch entry | `rule` / `llm` / `hybrid` / `hybrid_audit` | `build_sniper` |
+  | C | KOL Copy-Trade | Copy pre-vetted KOL wallets | `rule` / `confirmed` / `audit` | `build_kol_copytrade` |
+  | D | Graduation Snipe | Pump.fun → Raydium migration entry | `rule` / `llm` / `hybrid` / `hybrid_audit` | `build_graduation` |
+  | E | Position Lifecycle | Hold / TP / scale-out / emergency exit | `rule` / `llm` / `hybrid` / `hybrid_audit` | `build_lifecycle` |
+  | F | Smart Money Confluence | ≥N pre-vetted wallets accumulate same token | `rule` / `llm` / `hybrid` / `hybrid_audit` | `build_confluence` |
+  | G | Early-Stage Dip Buy | Post-dump recovery entry | `rule` / `llm` / `hybrid` / `hybrid_audit` | `build_dip_buy` |
+  | H | Organic Growth Detector | Post-launch chart-pattern triage filter | `rule` / `llm` / `hybrid` / `hybrid_audit` | `build_organic_detector` |
 
   All agents expose the same `decision_log` + `reflect_window` +
   `reflect_feature_keys` + `reflect_top_k` parameters. Passing a `DecisionLog`
