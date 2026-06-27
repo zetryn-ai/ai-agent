@@ -1,64 +1,63 @@
-# Strategy Catalog
+# Agents Catalog
 
-Single source of truth for every reference strategy in this repo — what
-ships today, what's planned, and what's been considered but rejected.
+Single source of truth for every reference agent in this repo — shipped,
+planned, and considered-and-rejected. Two categories so far:
 
-For roadmap status (versions shipped, milestones) see
-[CAPABILITIES.md §6](CAPABILITIES.md#6-roadmap). For per-strategy design
-specs see [plans/](plans/). For non-roadmap changes (refactors, fixes)
-see [maintenance-log.md](maintenance-log.md).
+- **Entry agent** — decides whether to OPEN a position (buy / skip / abort).
+- **Position management agent** — decides what to do on an OPEN position
+  (hold / take_profit / stop_loss / scale_out / exit_full).
 
-**Tier definitions (used below):**
+For roadmap status see [CAPABILITIES.md §6](CAPABILITIES.md#6-roadmap).
+For per-agent design specs see [plans/](plans/).
+For non-roadmap changes see [maintenance-log.md](maintenance-log.md).
 
-| Tier | Meaning |
-|---|---|
-| **S** | Edge-defining. Distinct signal not already captured by another agent. Build next. |
-| **A** | Strong fit, complementary. Build after current S-tier ships. |
-| **B** | Plausible but incremental — partial overlap with an existing agent. |
-| **C** | Considered, not pursued. Reason recorded. |
+**Tier:** S = build next · A = build after S · B = considered, partial overlap · C = rejected with reason.
 
 ---
 
-## Shipped strategies
+## Shipped
 
-### Scanner (v0.1.0, hardened v0.3.0)
-- **Agent:** `build_scanner(llm)` → `strategies/agents/scanner.py`
-- **Input:** `TradingContext(token, config: ScannerConfig)`
-- **Modes:** AI-first single LLM call with hard gates + guardrail
-- **Use case:** Triage a stream of candidate tokens; emit `alert` / `watch` / `skip`
-- **Distinct signal:** Multi-aspect narrative + structure analysis (safety, market, wallets, social)
-
-### Sniper (v0.1.0, +reflect v0.11.0)
-- **Agent:** `build_sniper(llm_client?, decision_log?)` → `strategies/agents/sniper.py`
-- **Input:** `TradingContext(token, config: SniperConfig)`
-- **Modes:** `rule` / `llm` / `hybrid` / `hybrid_audit`
-- **Use case:** Speed-first entry on already-filtered tokens
-- **Distinct signal:** Sub-ms rule path; optional LLM with deterministic guardrail
-
-### KOL Copy-Trade (v0.6.0 → v0.11.0, K1–K7)
-- **Agent:** `build_kol_copytrade(pack|registry, mode, ...)` → `strategies/agents/kol_copytrade.py`
-- **Input:** `KOLContext(event: KOLBuyEvent, token, config)`
-- **Modes:** `rule` / `confirmed` / `audit`
-- **Use case:** Copy a vetted KOL wallet's buy with sizing scaled by their hit-rate
-- **Distinct signal:** Per-wallet historical performance (`KOLProfile`) + cooldown
-
-### Pump.fun Graduation Snipe (v0.12.0)
-- **Agent:** `build_graduation(llm_client?, decision_log?)` → `strategies/agents/graduation.py`
-- **Input:** `GraduationContext(token, event: GraduationEvent, config)`
-- **Modes:** `rule` / `llm` / `hybrid` / `hybrid_audit`
-- **Use case:** Snipe a Pump.fun token in the 5–30s window after Raydium graduation
-- **Distinct signal:** Bonding-curve demand quality (fill speed, unique buyers, premium)
+| Category | Name | Version | Builder | Modes | Distinct signal |
+|---|---|---|---|---|---|
+| Entry | Scanner | v0.1.0 / v0.3.0 | `build_scanner(llm)` | AI-first single LLM call + hard gates + guardrail | Multi-aspect narrative + structure analysis |
+| Entry | Sniper | v0.1.0 / v0.11.0 (+reflect) | `build_sniper(llm?, decision_log?)` | rule · llm · hybrid · hybrid_audit | Sub-ms rule path; LLM inside deterministic guardrail |
+| Entry | KOL Copy-Trade | v0.6.0 → v0.11.0 (K1–K7) | `build_kol_copytrade(pack, mode, ...)` | rule · confirmed · audit | Single-wallet historical performance (`KOLProfile`) + cooldown |
+| Entry | Pump.fun Graduation Snipe | v0.12.0 | `build_graduation(llm?, decision_log?)` | rule · llm · hybrid · hybrid_audit | Bonding-curve fill speed + unique buyers + LP setup at graduation moment |
 
 ---
 
-## Roadmap strategies — S-tier (build next)
+## Planned — S-tier (build next)
 
-### Position Lifecycle Helpers
-**ID:** PL1 · **Tier:** S · **Status:** planned · **Spec:** TBD (`docs/plans/YYYY-MM-DD-position-lifecycle.md`)
+| Category | Name | Tier | Distinct signal | Why now |
+|---|---|---|---|---|
+| Position management | [PL1 — Position Lifecycle Helpers](#pl1-position-lifecycle-helpers) | S | PnL trajectory, drawdown-from-peak, time-in-trade on an open position | Biggest gap: every shipped agent decides ENTRY, nothing helps with EXIT. Users bolt on TP/SL outside the framework. |
+| Entry | [S5 — Smart Money Confluence](#s5-smart-money-confluence) | S | N pre-vetted smart wallets converging on the same token within window T | Smart-wallet count is currently a scoring INPUT inside scanner. As primary trigger it's a much higher-precision signal. Distinct from KOL (multi-wallet correlation, not single-wallet copy). |
 
-**Why S-tier:** Every existing agent (scanner / sniper / KOL / graduation) decides *entry*. Nothing in the framework helps with *exit*. The bot is on its own once filled — meaning users have to bolt on their own TP/SL logic outside the framework. This is the biggest single gap.
+## Planned — A-tier (after S ships)
 
-**Boundary check (NON-NEGOTIABLE):** Framework returns *recommendations*. Bot owns the open position, live price stream, MEV, slippage, signing. No position persistence inside the framework — bot pushes `PositionContext` per tick.
+| Category | Name | Tier | Distinct signal | Why later |
+|---|---|---|---|---|
+| Entry | Migration Front-Run | A | Token migrating between DEXes (Raydium ↔ Meteora, pool upgrades). Not a new launch — has history, holders, narrative. | Smaller TAM than S-tier; depends on cross-DEX migration feed. |
+| Entry | Re-Accumulation Detector | A | Post-dump (-60–80%) tightening sells + smart-wallet quiet accumulation + holder rebound | Especially benefits from PL1 lifecycle helpers — build that first. |
+
+## Considered, NOT pursued (B / C-tier)
+
+| Category | Name | Tier | Reason rejected |
+|---|---|---|---|
+| Entry | Volume Spike Scanner | B | Too easy to bait (wash-trading triggers same signal as organic momentum). Existing scanner already weights volume. No distinct primary signal. |
+| Entry | Twitter Sentiment Pump | C | By the time sentiment lags into the framework, the move is done. Belongs as a scoring input (already in `SocialData`), not a trigger. |
+| Entry | Whale Wallet Mirror (single whale) | C | Subset of KOL copy-trade — a whale is just a `KOLRegistry` entry with a `whale` tier. No new agent needed. |
+| Execution | MEV / Sandwich Bot | C | Out of scope: execution-layer concern (transaction ordering). Framework is decide-only. |
+
+---
+
+## Detailed specs (S-tier)
+
+### PL1 — Position Lifecycle Helpers
+
+**Category:** Position management · **Tier:** S · **Status:** planned · **Spec:** TBD
+
+**Boundary check (NON-NEGOTIABLE):** Returns *recommendations*. Bot owns the open position, live price stream, MEV, slippage, signing, persistence. Framework holds no position state across calls — bot pushes a fresh `PositionContext` per tick.
 
 **Proposed shape:**
 
@@ -69,13 +68,13 @@ class PositionState(BaseModel):
     current_price: float
     pnl_pct: float
     holding_seconds: float
-    peak_pnl_pct: float          # high-water mark since entry
+    peak_pnl_pct: float
     drawdown_from_peak_pct: float
 
 class LifecycleConfig(BaseModel):
     take_profit_pcts: list[float] = [0.5, 1.0, 3.0]   # scale-out ladder
     stop_loss_pct: float = -0.3
-    trailing_drawdown_pct: float = 0.5                 # exit on 50% give-back
+    trailing_drawdown_pct: float = 0.5
     max_hold_seconds: float = 3600
     decision_mode: Literal["rule", "llm", "hybrid"] = "rule"
 
@@ -86,14 +85,13 @@ class PositionContext:
     config: LifecycleConfig = field(default_factory=LifecycleConfig)
 ```
 
-Output `Decision.action ∈ {hold, take_profit, stop_loss, scale_out, exit_full}` with `size` = how much to sell (for scale_out / take_profit).
+Output: `Decision(action ∈ {hold, take_profit, stop_loss, scale_out, exit_full})` with `size` = how much to sell.
 
-**Why distinct from entry agents:** Different state shape (open position), different decision space (sell-side ladder, not buy/skip/abort), different feature set (PnL trajectory, time-in-trade, drawdown-from-peak).
+**Why distinct from entry agents:** different input shape (`PositionContext`), different output action space (sell-side ladder), different features (PnL trajectory, time-in-trade, drawdown-from-peak).
 
-### Strategy #5 — Smart Money Confluence
-**ID:** S5 · **Tier:** S · **Status:** planned · **Spec:** TBD
+### S5 — Smart Money Confluence
 
-**Why S-tier:** Smart-wallet activity is currently a *scoring input* inside scanner/sniper, not a primary trigger. A dedicated agent fires only when **multiple** vetted smart wallets converge on the same token within a window — a much higher-precision signal than "1 smart wallet bought" buried in a scanner score.
+**Category:** Entry · **Tier:** S · **Status:** planned · **Spec:** TBD
 
 **Proposed shape:**
 
@@ -105,7 +103,7 @@ class SmartWalletBuy(BaseModel):
 
 class SmartConfluenceEvent(BaseModel):
     mint: str
-    buys: list[SmartWalletBuy]                # all qualifying buys in the window
+    buys: list[SmartWalletBuy]
     window_seconds: float
     first_buy_ts: float
     distinct_smart_wallets: int
@@ -113,57 +111,25 @@ class SmartConfluenceEvent(BaseModel):
 class SmartConfluenceConfig(BaseModel):
     min_distinct_wallets: int = 3
     max_window_seconds: float = 120.0
-    min_wallet_hit_rate: float = 0.5          # per-wallet floor (lookup in registry)
+    min_wallet_hit_rate: float = 0.5
     require_no_bundler_overlap: bool = True
     decision_mode: Literal["rule", "llm", "hybrid", "hybrid_audit"] = "rule"
 ```
 
-Reuses sniper's `fast_safety` + a generalized `market_gate`. New registry: `SmartWalletRegistry` (parallel to `KOLRegistry`, sourced from `KnowledgePack`).
+Reuses sniper's `fast_safety` + a generalized `market_gate`. New `SmartWalletRegistry` (parallel to `KOLRegistry`, sourced from `KnowledgePack`).
 
-**Why distinct from KOL Copy-Trade:** KOL is *single-wallet* (one trusted signal → copy). Confluence is *multi-wallet correlation* (cluster of independent smart wallets converging = much stronger).
-
----
-
-## Roadmap strategies — A-tier
-
-### Strategy #6 — Migration Front-Run
-**Tier:** A · **Status:** considered
-
-Detect tokens migrating between DEXes (e.g. Raydium → Meteora, Orca → Raydium pool upgrade) and front-run the new pair. Distinct from graduation snipe because the token is *not* a new launch — it has price history, holders, established narrative. Different feature set (migration urgency, liquidity ratio shift, holder retention post-migration).
-
-**Build after:** PL1 + S5 ship.
-
-### Strategy #7 — Re-Accumulation Detector
-**Tier:** A · **Status:** considered
-
-Token already had its first leg, dumped 60–80%, and is showing accumulation: low-volume buying from smart wallets, tightening sell pressure, holder count rising again. Different temporal shape from any current agent (post-dump, not new launch).
-
-**Build after:** PL1 ships (re-entries especially benefit from lifecycle helpers).
+**Why distinct from KOL Copy-Trade:** KOL = single-wallet copy. Confluence = multi-wallet correlation (cluster of independent smart wallets converging). Different trigger semantics, different config (min_distinct_wallets, window), different failure modes (one rogue wallet doesn't fire S5).
 
 ---
 
-## Considered, NOT pursued (B/C-tier)
+## Three-question gate for proposing any new agent
 
-### Volume Spike Scanner — **B-tier**
-Reason: too easy to bait. A whale wash-trading their own bag triggers the same signal as organic momentum. Existing scanner already weights volume; a dedicated agent doesn't add a *distinct* signal.
+Before drafting a spec, answer all three. Fail one → don't propose.
 
-### Twitter Sentiment Pump — **C-tier**
-Reason: leading indicator quality is too low. By the time sentiment data lags into the framework, the move is already 10x done. Twitter signals belong as *scoring input* (already in `SocialData`), not as a primary trigger.
+| # | Question | Fail = |
+|---|---|---|
+| 1 | **Distinct input shape** — needs a context not in `{TradingContext, KOLContext, GraduationContext, PositionContext}`? | Config tweak on existing agent, not a new agent |
+| 2 | **Distinct primary signal** — predictive feature no existing agent uses as primary trigger? "Already a scoring input" doesn't count. | Add as scoring input to existing agent |
+| 3 | **Boundary-safe** — framework can define it without subscribing, holding state, or signing? | Kill at the boundary — that's a bot-layer concern |
 
-### Whale Wallet Mirror (single whale, not confluence) — **C-tier**
-Reason: subset of KOL copy-trade. Whale = an entry in `KOLRegistry` with a different `tier` label. No new agent needed.
-
-### MEV / Sandwich Bot — **C-tier**
-Reason: out of scope. This is an execution-layer concern (transaction ordering), not a decision-layer one. Framework is decide-only.
-
----
-
-## When to add a new strategy here
-
-Before proposing one, answer all three:
-
-1. **Distinct input shape** — does it need a context type that's not `TradingContext` / `KOLContext` / `GraduationContext` / `PositionContext`? If no, it's a config tweak on an existing agent, not a new strategy.
-2. **Distinct signal** — what predictive feature does no existing agent already use as a *primary* trigger? "Already a scoring input" doesn't count.
-3. **Boundary-safe** — can the framework define it without subscribing to a feed, holding state, or signing anything? If no, kill the proposal at the boundary.
-
-If all three pass, file a design doc in [docs/plans/](plans/) (NOT `docs/superpowers/` — that path is retired). Reference this catalog from the spec.
+If all three pass: file a spec in [docs/plans/](plans/) (NOT `docs/superpowers/` — retired) and add a row to the appropriate table above.
