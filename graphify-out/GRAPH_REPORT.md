@@ -1,16 +1,16 @@
 # Graph Report - ai-agent  (2026-06-27)
 
 ## Corpus Check
-- 142 files · ~96,899 words
+- 151 files · ~101,711 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3136 nodes · 9378 edges · 136 communities (121 shown, 15 thin omitted)
-- Extraction: 79% EXTRACTED · 21% INFERRED · 0% AMBIGUOUS · INFERRED: 1928 edges (avg confidence: 0.53)
+- 3322 nodes · 9811 edges · 148 communities (132 shown, 16 thin omitted)
+- Extraction: 79% EXTRACTED · 21% INFERRED · 0% AMBIGUOUS · INFERRED: 2037 edges (avg confidence: 0.53)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `7759c696`
+- Built from commit: `b010aed0`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -147,12 +147,24 @@
 - [[_COMMUNITY_Community 131|Community 131]]
 - [[_COMMUNITY_Community 132|Community 132]]
 - [[_COMMUNITY_Community 133|Community 133]]
+- [[_COMMUNITY_Community 136|Community 136]]
+- [[_COMMUNITY_Community 137|Community 137]]
+- [[_COMMUNITY_Community 138|Community 138]]
+- [[_COMMUNITY_Community 139|Community 139]]
+- [[_COMMUNITY_Community 140|Community 140]]
+- [[_COMMUNITY_Community 141|Community 141]]
+- [[_COMMUNITY_Community 142|Community 142]]
+- [[_COMMUNITY_Community 143|Community 143]]
+- [[_COMMUNITY_Community 144|Community 144]]
+- [[_COMMUNITY_Community 145|Community 145]]
+- [[_COMMUNITY_Community 146|Community 146]]
+- [[_COMMUNITY_Community 147|Community 147]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `LLMResult` - 251 edges
+1. `LLMResult` - 256 edges
 2. `State` - 218 edges
 3. `Message` - 209 edges
-4. `State` - 164 edges
+4. `State` - 183 edges
 5. `LLMError` - 140 edges
 6. `Decision` - 106 edges
 7. `ContractData` - 92 edges
@@ -180,67 +192,67 @@
 - **Scanner Hard-Gate Filtering Pipeline** — readme_safety_gate, readme_intel_gate, readme_market_gate, readme_guardrail [EXTRACTED 1.00]
 - **LLM Failover and Throttle Stack** — readme_llm_router, capabilities_router_entry, readme_key_pool, capabilities_rate_limit [EXTRACTED 1.00]
 
-## Communities (136 total, 15 thin omitted)
+## Communities (148 total, 16 thin omitted)
 
 ### Community 0 - "LLM Key Pool & Config"
-Cohesion: 0.13
-Nodes (38): Command, DipBuyVerdict, _abort(), _audit_prompt(), _dip_facts(), dip_gate(), dip_guardrail(), dip_prompt() (+30 more)
+Cohesion: 0.09
+Nodes (50): Agent F — Early-Stage Dip Buy (v0.15.0 / S6).  One agent, two events. After a Pu, AuditVerdict, DipBuyVerdict, Graph, _abort(), _audit_prompt(), _dip_facts(), dip_gate() (+42 more)
 
 ### Community 1 - "LLM Client & Guardrails"
 Cohesion: 0.07
-Nodes (72): DecisionFallbackFn, GuardrailFn, LLMClient, Minimal completion interface.      ``tools`` accepts a list of OpenAI function-c, LLMDecisionNode, Lets the LLM decide directly: its structured output becomes the final     decisi, _extract_json(), Best-effort extraction of a JSON object from model output. (+64 more)
+Nodes (67): DecisionFallbackFn, GuardrailFn, LLMClient, Minimal completion interface.      ``tools`` accepts a list of OpenAI function-c, LLMDecisionNode, Lets the LLM decide directly: its structured output becomes the final     decisi, _extract_json(), Best-effort extraction of a JSON object from model output. (+59 more)
 
 ### Community 2 - "KOL Copy-Trade Example"
-Cohesion: 0.09
-Nodes (68): BaseModel, _build_groq_client(), _decide(), _discover_keys(), _load_env_file(), main(), KOLContext, Path (+60 more)
+Cohesion: 0.12
+Nodes (50): _build_groq_client(), _decide(), _discover_keys(), _load_env_file(), main(), KOLContext, Path, str (+42 more)
 
 ### Community 3 - "KOL Audit Mode Tests"
 Cohesion: 0.10
-Nodes (61): KOLContext, LLMRouter, TokenInput, KOLBuyEvent, bool, float, LLMResult, Message (+53 more)
+Nodes (61): LLMClient, LLMRouter, KOLBuyEvent, bool, float, LLMResult, Message, bool (+53 more)
 
 ### Community 4 - "Rate Limit & LLM Router"
-Cohesion: 0.07
-Nodes (71): RateLimit, Per-model limits. None means unlimited. Real numbers come from the platform., build_tier_entries(), get_free_tier_limit(), LLMRouter, Look up a preset by provider + model. Returns None if unknown.      For OpenRout, Sliding-window counters for one router entry., Return True if a new request is allowed under current limits. (+63 more)
+Cohesion: 0.16
+Nodes (31): One provider in the router's failover chain., RouterEntry, bool, float, int, LLMResult, Message, str (+23 more)
 
 ### Community 5 - "Knowledge Pack System"
 Cohesion: 0.08
 Nodes (39): Static knowledge injection at agent build time.  A `KnowledgePack` loads markdow, KnowledgePack, KnowledgePackError, Filesystem-backed knowledge pack loader.  Layout (all keys optional — missing su, Raised when a pack cannot be loaded (missing dir, bad JSON, etc.)., An immutable bundle of static knowledge loaded from a directory.      Use `Knowl, One system message per markdown file, in filename order., All markdown blocks merged into a single system message.          Returns None i (+31 more)
 
 ### Community 6 - "KOL Strategy Agent"
-Cohesion: 0.12
-Nodes (35): bool, Exception, float, KnowledgePack, KOLContext, LLMResult, Message, Path (+27 more)
+Cohesion: 0.11
+Nodes (37): bool, Exception, float, KnowledgePack, KOLContext, LLMResult, Message, Path (+29 more)
 
 ### Community 7 - "Backtester & Runner"
-Cohesion: 0.10
-Nodes (45): Backtester, Runs a graph over a dataset and returns a :class:`BacktestResult`., main(), LLMResult, Message, Example: backtest the scanner over a small historical dataset.  Runs offline (st, _StubLLM, HistoricalCase (+37 more)
+Cohesion: 0.15
+Nodes (31): main(), LLMResult, Message, Example: backtest the scanner over a small historical dataset.  Runs offline (st, _StubLLM, HistoricalCase, LLMResult, Message (+23 more)
 
 ### Community 8 - "Core Graph & Edges"
-Cohesion: 0.09
-Nodes (40): Condition, Edge, A directed, optionally conditional transition.      The engine evaluates a node', GraphExecutionError, GraphValidationError, Raised at compile time when the graph is structurally invalid., Raised at run time when a node fails or a loop bound is exceeded., Hooks (+32 more)
+Cohesion: 0.11
+Nodes (46): Condition, Edge, A directed, optionally conditional transition.      The engine evaluates a node', GraphExecutionError, GraphValidationError, Raised at compile time when the graph is structurally invalid., Raised at run time when a node fails or a loop bound is exceeded., Hooks (+38 more)
 
 ### Community 9 - "State Machine & Memory"
-Cohesion: 0.22
-Nodes (12): Any, State, str, Observability: structured logging hooks + trace serialization., Helpers to turn a run's trace into serializable data., Serialize the per-node trace (without the scratch snapshots, which may hold, A compact, loggable summary of a finished run., run_summary() (+4 more)
+Cohesion: 0.12
+Nodes (26): Graph, Hooks, Any, State, str, Observability: structured logging hooks + trace serialization., logging_hooks(), Structured logging hooks.  ``logging_hooks`` returns a :class:`Hooks` that emits (+18 more)
 
 ### Community 10 - "Examples & Shared Types"
 Cohesion: 0.05
 Nodes (39): 1. LLM Providers, 2. Key Rotation & Multi-Provider Router, 3. Knowledge — static context the LLM reads, 4. Skills — callable tools the LLM invokes, 5. Decision Modes, 6. Memory & Reflective Loop, 7. Agent Reference, 8. Backtesting (+31 more)
 
 ### Community 11 - "Scanner Agent & Analyst"
-Cohesion: 0.16
-Nodes (22): float, LLMResult, Message, str, TradingContext, _ctx(), _FakeLLM, _full_analysis_payload() (+14 more)
+Cohesion: 0.19
+Nodes (20): float, str, TradingContext, _ctx(), _FakeLLM, _full_analysis_payload(), float, str (+12 more)
 
 ### Community 12 - "Analyst Prompt Engine"
-Cohesion: 0.14
-Nodes (26): KnowledgePack, LLMResult, Message, Path, str, _pack(), LLMResult, Message (+18 more)
+Cohesion: 0.18
+Nodes (22): KnowledgePack, Path, str, _pack(), Path, Integration tests: KnowledgePack injection into scanner / sniper prompts., When no pack and no lessons are present, output equals analyst_prompt., An empty pack adds no blocks; output equals analyst_prompt. (+14 more)
 
 ### Community 13 - "Auth & Subscription"
 Cohesion: 0.10
 Nodes (30): Subscription auth seam that gates access to the Zetryn agent + models., Entitlement, License, LocalSubscriptionAuth, Subscription auth seam.  Gates access to the Zetryn agent + hosted models. The d, Lightweight, cached license validation — NOT per-run.      Validates once, cache, Result of verifying a subscription key., Verifies a subscription key and returns what it entitles. (+22 more)
 
 ### Community 14 - "Router Tier & Tests"
-Cohesion: 0.10
-Nodes (27): LLMResult, Message, _FakeClient, LLMResult, Message, Tests for the v0.8.0 provider expansion (Cerebras / Mistral / SambaNova / NVIDIA, Minimal LLMClient stand-in., Caller passes a dict with only one provider — others are skipped. (+19 more)
+Cohesion: 0.12
+Nodes (28): build_tier_entries(), get_free_tier_limit(), Look up a preset by provider + model. Returns None if unknown.      For OpenRout, Materialise a tier preset into a list of RouterEntry.      The caller is respons, str, _FakeClient, Tests for the v0.8.0 provider expansion (Cerebras / Mistral / SambaNova / NVIDIA, Minimal LLMClient stand-in. (+20 more)
 
 ### Community 15 - "Capabilities & Docs"
 Cohesion: 0.11
@@ -259,40 +271,40 @@ Cohesion: 0.16
 Nodes (23): str, TradingContext, _AuditLLM, _ctx(), _FakeLLM, Tests for M6: sniper agent (pure-rule fast path) + LLM-decide/hybrid., Fake LLM that returns an AuditVerdict JSON., Sniper decides via rule, dispatches background LLM audit, returns immediately. (+15 more)
 
 ### Community 19 - "Tool Use Node & Tests"
-Cohesion: 0.05
-Nodes (55): AnalystVerdict, check_rug(), CheckRugInput, get_smart_money_buys(), main(), Example: LLM-driven tool-use loop wired into an analyst-style decision.  Demonst, Pretend RugCheck lookup. In production this would be a real API call., Pretend smart-money tracker. Returns count of profitable wallets buying. (+47 more)
+Cohesion: 0.14
+Nodes (23): Any, BaseModel, float, str, Tests for the M2 generic tool system., test_registry_register_and_call(), test_registry_rejects_duplicate(), test_registry_unknown_tool_is_graceful() (+15 more)
 
 ### Community 20 - "KOL Confirmed Mode Tests"
 Cohesion: 0.15
 Nodes (29): Exception, KnowledgePack, KOLContext, Path, str, _ctx(), _pack(), K5 tests — KOL copy-trade `confirmed` mode (LLM analyst before sizing).  Uses sc (+21 more)
 
 ### Community 21 - "Decision Log & Reflection"
-Cohesion: 0.14
-Nodes (24): AgentNode, Anything the engine can execute as a sub-graph (duck-typed Graph)., Extension point: a node whose work is another graph (sub-agent).      The sub-gr, Runnable, Command, Dynamic routing escape hatch returned by a node.      A node may return a ``Comm, Data flowing through the graph.      Attributes:         context: Input supplied, State (+16 more)
+Cohesion: 0.22
+Nodes (9): Any, Command, State, str, RuleFn, Any, Command, State (+1 more)
 
 ### Community 22 - "Sniper Nodes & Decisions"
-Cohesion: 0.10
-Nodes (43): system(), str, _audit_prompt(), fast_market(), fast_safety(), _latency_ms(), make_audit_dispatch(), make_snipe_prompt() (+35 more)
+Cohesion: 0.09
+Nodes (40): Decision, system(), _audit_prompt(), fast_market(), fast_safety(), _latency_ms(), make_audit_dispatch(), make_snipe_prompt() (+32 more)
 
 ### Community 23 - "KOL Reflective Loop Tests"
 Cohesion: 0.19
 Nodes (27): DecisionLog, KnowledgePack, KOLContext, Path, _CapturingLLM, _ctx(), _pack(), DecisionLog (+19 more)
 
 ### Community 24 - "LLM Router & Entry Tests"
-Cohesion: 0.14
-Nodes (17): _AuditLLM, _ctx(), _event(), _FakeLLM, ConfluenceContext, ConfluenceEvent, LLMResult, Tests for Smart Money Confluence mode wiring (v0.14.0 / S5). (+9 more)
+Cohesion: 0.12
+Nodes (23): _AuditLLM, _ctx(), _event(), _FakeLLM, ConfluenceContext, ConfluenceEvent, LLMResult, Tests for Smart Money Confluence mode wiring (v0.14.0 / S5). (+15 more)
 
 ### Community 25 - "Community 25"
-Cohesion: 0.06
-Nodes (42): Agent G — Organic Growth Detector (v0.16.0 / A1).  Triage filter — classifies a, Agent C — KOL Copy-Trade.  Consumes a `KOLContext` and emits a `Decision`. The b, KOLProfile, Any, bool, float, int, KnowledgePack (+34 more)
+Cohesion: 0.07
+Nodes (40): Agent C — KOL Copy-Trade.  Consumes a `KOLContext` and emits a `Decision`. The b, KOLProfile, Any, bool, float, int, KnowledgePack, str (+32 more)
 
 ### Community 26 - "Community 26"
-Cohesion: 0.11
-Nodes (25): DecisionLog, A generic decision log built on a MemoryStore.  Stores one record per run (plain, Persistent memory: pluggable key-value store + blacklist + decision log., _infer_feature_keys(), _is_numeric(), Pattern, _quartile_label(), Reflective node: read past decisions, extract loss patterns, inject lessons.  `R (+17 more)
+Cohesion: 0.14
+Nodes (25): _infer_feature_keys(), _is_numeric(), Pattern, _quartile_label(), Reflective node: read past decisions, extract loss patterns, inject lessons.  `R, Pure function: derive loss patterns from a list of decision records., Pick top-level keys that look like features (not run_id / action / outcome)., One observed loss pattern: a (feature, bucket) pair with stats. (+17 more)
 
 ### Community 27 - "Community 27"
-Cohesion: 0.20
-Nodes (26): load_graph(), Load, validate, and compile a YAML graph spec.      Args:         path: Path to, Tests for the YAML graph loader., test_duplicate_node_name(), test_edge_to_unknown_node(), test_empty_nodes_list(), test_end_sentinel_in_when_condition(), test_entry_not_in_nodes() (+18 more)
+Cohesion: 0.15
+Nodes (33): load_graph(), Load, validate, and compile a YAML graph spec.      Args:         path: Path to, decide_buy(), decide_skip(), dummy_prompt(), dummy_result_fn(), Command, State (+25 more)
 
 ### Community 28 - "Community 28"
 Cohesion: 0.20
@@ -303,8 +315,8 @@ Cohesion: 0.08
 Nodes (36): build_scanner(), Build and compile the AI-first scanner graph.      With an LLM client the flow i, DecisionLog, Graph, int, KnowledgePack, LLMClient, str (+28 more)
 
 ### Community 30 - "Community 30"
-Cohesion: 0.13
-Nodes (13): Any, SmartWalletProfile, Any, bool, float, int, KnowledgePack, str (+5 more)
+Cohesion: 0.11
+Nodes (16): Agent E — Smart Money Confluence (v0.14.0 / S5).  Fires when ≥ N pre-vetted smar, Any, SmartWalletProfile, Reference strategies built on the zetryn framework.  This is the proving ground:, Any, bool, float, int (+8 more)
 
 ### Community 31 - "Community 31"
 Cohesion: 0.21
@@ -324,15 +336,15 @@ Nodes (23): _build_llm(), _discover_keys(), _grep_float(), _grep_int(), _load_en
 
 ### Community 35 - "Community 35"
 Cohesion: 0.11
-Nodes (52): Graph, int, LifecycleVerdict, AuditVerdict, bool, Command, float, KnowledgePack (+44 more)
+Nodes (50): Command, LifecycleVerdict, AuditVerdict, bool, Command, float, KnowledgePack, LLMClient (+42 more)
 
 ### Community 36 - "Community 36"
-Cohesion: 0.05
-Nodes (66): LLMResult, Message, LLMResult, Message, LLMResult, Message, LLMResult, Message (+58 more)
+Cohesion: 0.04
+Nodes (74): LLMResult, Message, LLMResult, Message, LLMResult, Message, LLMResult, Message (+66 more)
 
 ### Community 37 - "Community 37"
-Cohesion: 0.05
-Nodes (70): build_lifecycle(), Agent E — Position Lifecycle Helpers (v0.13.0 / PL1).  First position-management, Build and compile the position-lifecycle graph.      Signature mirrors `build_sn, _llm_client(), main(), LLMResult, Message, Example: position-lifecycle helpers (v0.13.0 / PL1).  Offline by default (stub L (+62 more)
+Cohesion: 0.17
+Nodes (20): PositionContext, PositionState, _AuditLLM, _ctx(), _FakeLLM, _pstate(), PositionContext, PositionState (+12 more)
 
 ### Community 38 - "Community 38"
 Cohesion: 0.20
@@ -343,20 +355,20 @@ Cohesion: 0.17
 Nodes (15): Generic backtest harness: replay a graph over a historical dataset., BacktestResult, _get(), Generic backtest harness.  Runs a compiled graph over a dataset of (id, context), One backtested item: the decision produced and the known outcome (if any)., Domain-agnostic: count decisions by their ``action`` attribute/key., Read ``key`` from a pydantic model, dataclass, dict, or object., RunRecord (+7 more)
 
 ### Community 40 - "Community 40"
-Cohesion: 0.17
-Nodes (19): float, LLMResult, Message, str, _ctx(), _payload(), Integration tests: `LLMRouter` is a drop-in `LLMClient` for the scanner.  The sc, After a 429, the primary stays on cooldown for the next scan too. (+11 more)
+Cohesion: 0.19
+Nodes (19): Exception, float, str, _ctx(), _payload(), str, Integration tests: `LLMRouter` is a drop-in `LLMClient` for the scanner.  The sc, After a 429, the primary stays on cooldown for the next scan too. (+11 more)
 
 ### Community 41 - "Community 41"
-Cohesion: 0.15
-Nodes (18): _build_router(), _discover_keys(), _load_env_file(), main(), int, LLMResult, LLMRouter, Message (+10 more)
+Cohesion: 0.18
+Nodes (14): _build_router(), _discover_keys(), _load_env_file(), main(), str, Example: scanner driven by `LLMRouter` with multi-provider failover.  This is th, Fallback when no provider keys are configured., Return (client, entry_names). client implements the LLMClient protocol. (+6 more)
 
 ### Community 42 - "Community 42"
-Cohesion: 0.16
-Nodes (29): SmartWalletAccumulation, _acc(), _ctx(), _event(), ConfluenceContext, ConfluenceEvent, float, str (+21 more)
+Cohesion: 0.15
+Nodes (32): build_confluence(), Build and compile the Smart Money Confluence graph.      Signature mirrors ``bui, SmartWalletAccumulation, DecisionLog, Graph, int, KnowledgePack, LLMClient (+24 more)
 
 ### Community 43 - "Community 43"
 Cohesion: 0.20
-Nodes (11): [0.11.0] — 2026-06-27, [0.12.0] — 2026-06-27, [0.17.0] — 2026-06-27, Added, Added, Added, Dependencies, Design (+3 more)
+Nodes (10): [0.11.0] — 2026-06-27, [0.12.0] — 2026-06-27, Added, Added, Added, Added, Fixed, Notes (+2 more)
 
 ### Community 44 - "Community 44"
 Cohesion: 0.09
@@ -379,8 +391,8 @@ Cohesion: 0.11
 Nodes (17): Architecture, Auth seam (`zetryn/auth/`), Backtest (`zetryn/backtest/`), Commands, Commit identity (ROLLING RANDOM — no need to ask), Core engine (`zetryn/core/`), Dependency rules (strict), Documentation conventions (MUST FOLLOW) (+9 more)
 
 ### Community 49 - "Community 49"
-Cohesion: 0.13
-Nodes (42): AuditVerdict, ConfluenceVerdict, Decision, _abort(), _audit_prompt(), _confluence_facts(), confluence_guardrail(), confluence_prompt() (+34 more)
+Cohesion: 0.15
+Nodes (38): BaseModel, ConfluenceVerdict, _abort(), _audit_prompt(), _confluence_facts(), confluence_guardrail(), confluence_prompt(), confluence_result() (+30 more)
 
 ### Community 50 - "Community 50"
 Cohesion: 0.67
@@ -416,35 +428,35 @@ Nodes (3): State, TokenInput, TradingContext
 
 ### Community 59 - "Community 59"
 Cohesion: 0.06
-Nodes (67): build_organic_detector(), Build and compile the Organic Growth Detector graph.      Signature mirrors othe, DecisionLog, main(), GrowthSnapshot, Example: Organic Growth Detector agent (v0.16.0 / A1).  Offline by default (stub, _run_case(), _snap() (+59 more)
+Nodes (68): build_organic_detector(), Agent G — Organic Growth Detector (v0.16.0 / A1).  Triage filter — classifies a, Build and compile the Organic Growth Detector graph.      Signature mirrors othe, DecisionLog, main(), GrowthSnapshot, Example: Organic Growth Detector agent (v0.16.0 / A1).  Offline by default (stub, _run_case() (+60 more)
 
 ### Community 62 - "Community 62"
-Cohesion: 0.14
-Nodes (32): bool, float, LLMResult, Message, str, ToolRegistry, str, ToolRegistry (+24 more)
+Cohesion: 0.17
+Nodes (28): LLMResult, str, ToolRegistry, ToolRegistry, Tests for the LLM tool-use loop and ToolUseNode., Tool errors do not crash the loop — they become a tool-role message., A model emitting malformed tool args is reported as tool failure, not crash., Model that never stops calling tools is bounded by max_iterations. (+20 more)
 
 ### Community 63 - "Community 63"
-Cohesion: 0.15
-Nodes (13): The thin LLM client abstraction.  A single small interface lets nodes stay provi, Provider configuration.  Config stores only the *names* of environment variables, LLM layer: provider-agnostic advisor calls with structured output., Mandatory API-key pool with rotation.  Free-tier providers rate-limit aggressive, LLMNode — an advisor step backed by an LLM with structured output.  Lives in the, OpenAI-compatible LLM client.  One adapter covers Groq, OpenRouter, and Gemini's, Multi-provider LLM router with per-model throttle enforcement.  `LLMRouter` wrap, Structured output: force a model to return a validated Pydantic object.  Strateg (+5 more)
+Cohesion: 0.10
+Nodes (20): Conditional transitions between nodes., The graph engine: compile nodes + edges into a runnable agent.  Routing rule: if, Engine lifecycle hooks.  Lightweight seam for observability: the engine fires th, Generic, chain-agnostic graph engine. Must not import from ``trading``., Node primitives.  A node is the unit of work. Every node exposes the same tiny i, Core state primitives that flow through a graph.  The engine uses a hybrid model, The thin LLM client abstraction.  A single small interface lets nodes stay provi, Provider configuration.  Config stores only the *names* of environment variables (+12 more)
 
 ### Community 71 - "Community 71"
 Cohesion: 0.13
-Nodes (13): main(), Example: scanner + observability (logging hooks) + memory (blacklist, decision l, _StubLLM, Blacklist, A generic blacklist built on a MemoryStore.  Keys (token mints, dev wallets, any, bool, float, MemoryStore (+5 more)
+Nodes (15): Blacklist, A generic blacklist built on a MemoryStore.  Keys (token mints, dev wallets, any, A generic decision log built on a MemoryStore.  Stores one record per run (plain, Persistent memory: pluggable key-value store + blacklist + decision log., MemoryStore, Persistent memory: a small key-value interface with pluggable backends.  The fra, Namespaced key-value store., bool (+7 more)
 
 ### Community 72 - "Community 72"
-Cohesion: 0.08
-Nodes (55): ProviderConfig, Describes one OpenAI-compatible provider., KeyPool, Round-robin pool of API keys with per-key cooldown on rate limit., LLMNode, Calls an LLM advisor and stores a validated result into scratch., OpenAICompatibleClient, An LLM client speaking the OpenAI chat-completions protocol. (+47 more)
+Cohesion: 0.07
+Nodes (58): ProviderConfig, Describes one OpenAI-compatible provider., LLMNode, Calls an LLM advisor and stores a validated result into scratch., OpenAICompatibleClient, An LLM client speaking the OpenAI chat-completions protocol., Return a validated instance of ``schema`` from the model., structured_complete() (+50 more)
 
 ### Community 74 - "Community 74"
 Cohesion: 0.12
 Nodes (16): 0. Summary, 1. Boundary recap, 2. Schemas (`trading/schemas.py`), 3. SmartWalletRegistry (`strategies/smart_wallet_registry.py`), 4. Graph design, 5. Decision modes, 6. Open questions resolved, `ConfluenceConfig` (+8 more)
 
 ### Community 76 - "Community 76"
-Cohesion: 0.16
-Nodes (31): GrowthVerdict, _abort(), _audit_prompt(), _emit(), _growth_facts(), growth_guardrail(), growth_prompt(), growth_result() (+23 more)
+Cohesion: 0.14
+Nodes (33): GrowthVerdict, int, _abort(), _audit_prompt(), _emit(), _growth_facts(), growth_guardrail(), growth_prompt() (+25 more)
 
 ### Community 77 - "Community 77"
-Cohesion: 0.33
-Nodes (9): InMemoryStore, Zero-setup dict-backed store. Default for tests and ephemeral runs., Tests for the M4 memory layer., test_blacklist(), test_decision_log_and_stats(), test_inmemory_put_get_delete(), test_inmemory_ttl_expiry(), test_json_file_store_persists() (+1 more)
+Cohesion: 0.39
+Nodes (7): Tests for the M4 memory layer., test_blacklist(), test_decision_log_and_stats(), test_inmemory_put_get_delete(), test_inmemory_ttl_expiry(), test_json_file_store_persists(), test_query_returns_unexpired()
 
 ### Community 78 - "Community 78"
 Cohesion: 0.22
@@ -455,56 +467,56 @@ Cohesion: 0.21
 Nodes (9): Return the next available key, skipping those still cooling down., Put a key on cooldown after a rate-limit response., float, int, str, ValueError, float, int (+1 more)
 
 ### Community 80 - "Community 80"
-Cohesion: 0.27
-Nodes (9): Aggregate counts by action and PnL stats from recorded outcomes., MemoryStore, Namespaced key-value store., Any, MemoryStore, str, Any, MemoryStore (+1 more)
+Cohesion: 0.18
+Nodes (12): DecisionLog, Aggregate counts by action and PnL stats from recorded outcomes., Any, MemoryStore, str, Command, State, Any (+4 more)
 
 ### Community 82 - "Community 82"
 Cohesion: 0.10
-Nodes (43): build_kol_copytrade(), Build and compile the KOL copy-trade graph.      Args:         knowledge_pack: A, DecisionLog, Graph, int, KnowledgePack, KOLRegistry, LLMClient (+35 more)
+Nodes (41): build_kol_copytrade(), Build and compile the KOL copy-trade graph.      Args:         knowledge_pack: A, DecisionLog, Graph, int, KnowledgePack, KOLRegistry, LLMClient (+33 more)
 
 ### Community 83 - "Community 83"
 Cohesion: 0.21
 Nodes (12): ConfluenceConfig, _build_event(), _build_registry(), main(), ConfluenceEvent, SmartWalletRegistry, str, Example: Smart Money Confluence agent (v0.14.0 / S5).  Offline by default (stub (+4 more)
 
 ### Community 84 - "Community 84"
-Cohesion: 0.50
-Nodes (4): [0.5.0] — 2026-06-25, Added, Changed, Notes
+Cohesion: 0.29
+Nodes (7): [0.5.0] — 2026-06-25, Added, Added, Changed, Changed, Notes, Notes
 
 ### Community 85 - "Community 85"
 Cohesion: 0.16
-Nodes (24): Agent A — the memecoin scanner + scorer (M8 AI-first).  Flow (M8 pivot to AI-fir, Exception, FullAnalysis, KnowledgePack, Message, State, analyst_prompt(), _lessons_block() (+16 more)
+Nodes (23): Agent A — the memecoin scanner + scorer (M8 AI-first).  Flow (M8 pivot to AI-fir, Exception, FullAnalysis, KnowledgePack, Message, State, analyst_prompt(), _lessons_block() (+15 more)
 
 ### Community 86 - "Community 86"
 Cohesion: 0.14
 Nodes (13): 0. Summary, 1. Boundary recap, 2. Integration pattern, 3. Schemas (`trading/schemas.py`), 4. Graph design, 5. Open questions resolved, A1 — Organic Growth Detector, `GrowthConfig` (+5 more)
 
 ### Community 87 - "Community 87"
-Cohesion: 0.40
-Nodes (5): [0.7.0] — 2026-06-25, Added, Changed, Notes, Verified end-to-end
+Cohesion: 0.14
+Nodes (14): [0.7.0] — 2026-06-25, [0.8.0] — 2026-06-25, Added, Added, Added, Added, Backwards compatibility, Backwards compatibility (+6 more)
 
 ### Community 88 - "Community 88"
-Cohesion: 0.40
-Nodes (5): [0.9.0] — 2026-06-26, Added, Backwards compatibility, Notes, Verified end-to-end
+Cohesion: 0.25
+Nodes (8): [0.9.0] — 2026-06-26, Added, Added, Backwards compatibility, Notes, Notes, Verified end-to-end, Verified end-to-end
 
 ### Community 89 - "Community 89"
-Cohesion: 0.25
-Nodes (7): [0.1.0] — 2026-06-24, [0.8.0] — 2026-06-25, Added, Added, Backwards compatibility, Changelog, Notes
+Cohesion: 0.17
+Nodes (12): [0.17.0] — 2026-06-27, [0.18.0] — 2026-06-27, [0.1.0] — 2026-06-24, Added, Added, Added, Changelog, Dependencies (+4 more)
 
 ### Community 90 - "Community 90"
-Cohesion: 0.50
-Nodes (4): [0.10.0] — 2026-06-26, Added, Notes, Verified end-to-end
+Cohesion: 0.33
+Nodes (6): [0.10.0] — 2026-06-26, Added, Added, Notes, Notes, Verified end-to-end
 
 ### Community 91 - "Community 91"
-Cohesion: 0.50
-Nodes (4): [0.2.0] — 2026-06-24, Added, Changed, Notes
+Cohesion: 0.29
+Nodes (7): [0.2.0] — 2026-06-24, Added, Added, Changed, Changed, Notes, Notes
 
 ### Community 92 - "Community 92"
-Cohesion: 0.50
-Nodes (4): [0.4.0] — 2026-06-25, Added, Changed, Notes
+Cohesion: 0.29
+Nodes (7): [0.4.0] — 2026-06-25, Added, Added, Changed, Changed, Notes, Notes
 
 ### Community 93 - "Community 93"
-Cohesion: 0.18
-Nodes (22): _build_router(), _decide(), _discover_keys(), _enriched_token(), _load_env_file(), main(), Path, str (+14 more)
+Cohesion: 0.23
+Nodes (18): _build_router(), _decide(), _discover_keys(), _enriched_token(), _load_env_file(), main(), KOLContext, Path (+10 more)
 
 ### Community 94 - "Community 94"
 Cohesion: 0.14
@@ -515,16 +527,16 @@ Cohesion: 0.23
 Nodes (10): main(), CLI: ``python -m zetryn.config <file.yaml>``.  Validates a YAML graph spec witho, Path, str, Tests for the ``python -m zetryn.config`` CLI., test_cli_invalid_spec_exits_one(), test_cli_valid_spec_exits_zero(), _write() (+2 more)
 
 ### Community 96 - "Community 96"
-Cohesion: 0.07
-Nodes (60): build_dip_buy(), Agent F — Early-Stage Dip Buy (v0.15.0 / S6).  One agent, two events. After a Pu, Build and compile the Early-Stage Dip Buy graph.      Signature mirrors ``build_, main(), DipBuySnapshot, Example: Early-Stage Dip Buy agent (v0.15.0 / S6).  Offline by default (stub LLM, _run_case(), _snap() (+52 more)
+Cohesion: 0.10
+Nodes (52): build_dip_buy(), Build and compile the Early-Stage Dip Buy graph.      Signature mirrors ``build_, DipBuySnapshot, Example: Early-Stage Dip Buy agent (v0.15.0 / S6).  Offline by default (stub LLM, _run_case(), _snap(), State, _AuditLLM (+44 more)
 
 ### Community 97 - "Community 97"
-Cohesion: 0.16
-Nodes (26): Pure function: derive loss patterns from a list of decision records., Graph node: load recent decisions and write a lessons block to scratch.      Wri, reflect(), ReflectiveNode, float, str, Command, State (+18 more)
+Cohesion: 0.18
+Nodes (22): Graph node: load recent decisions and write a lessons block to scratch.      Wri, ReflectiveNode, float, str, float, str, Tests for the ReflectiveNode and underlying `reflect()` extractor., _record() (+14 more)
 
 ### Community 98 - "Community 98"
-Cohesion: 0.22
-Nodes (9): [0.13.0] — 2026-06-27, [0.15.0] — 2026-06-27, [0.16.0] — 2026-06-27, Added, Added, Added, Design notes, Design notes (+1 more)
+Cohesion: 0.12
+Nodes (20): [0.13.0] — 2026-06-27, [0.14.0] — 2026-06-27, [0.15.0] — 2026-06-27, [0.16.0] — 2026-06-27, Added, Added, Added, Added (+12 more)
 
 ### Community 99 - "Community 99"
 Cohesion: 0.23
@@ -543,16 +555,16 @@ Cohesion: 0.36
 Nodes (8): decide_buy(), decide_skip(), main(), market_gate(), Command, State, Offline runner for the YAML scanner demo.  Loads ``examples/scanner.yaml`` via t, safety_gate()
 
 ### Community 103 - "Community 103"
-Cohesion: 0.50
-Nodes (4): [0.3.0] — 2026-06-25, Added, Changed, Notes
+Cohesion: 0.29
+Nodes (7): [0.3.0] — 2026-06-25, Added, Added, Changed, Changed, Notes, Notes
 
 ### Community 104 - "Community 104"
-Cohesion: 0.50
-Nodes (4): [0.6.0] — 2026-06-25, Added, Changed, Notes
+Cohesion: 0.29
+Nodes (7): [0.6.0] — 2026-06-25, Added, Added, Changed, Changed, Notes, Notes
 
 ### Community 105 - "Community 105"
-Cohesion: 0.67
-Nodes (3): [0.14.0] — 2026-06-27, Added, Design notes
+Cohesion: 0.12
+Nodes (35): PanelNode, Intermediate panel — aggregator result goes to ``scratch[output_key]``.      Use, _const_specialist(), _failing_specialist(), _identity_aggregator(), _peek_panel_specialist(), Any, Exception (+27 more)
 
 ### Community 106 - "Community 106"
 Cohesion: 0.07
@@ -571,8 +583,8 @@ Cohesion: 0.28
 Nodes (17): DecisionLog, GraduationContext, GraduationEvent, _CapturingLLM, _ctx(), _event(), DecisionLog, GraduationContext (+9 more)
 
 ### Community 110 - "Community 110"
-Cohesion: 0.27
-Nodes (16): DecisionLog, LLMResult, PositionContext, _CapturingLLM, _ctx(), DecisionLog, LLMResult, PositionContext (+8 more)
+Cohesion: 0.29
+Nodes (16): InMemoryStore, Zero-setup dict-backed store. Default for tests and ephemeral runs., DecisionLog, PositionContext, _CapturingLLM, _ctx(), DecisionLog, PositionContext (+8 more)
 
 ### Community 111 - "Community 111"
 Cohesion: 0.10
@@ -595,48 +607,48 @@ Cohesion: 0.16
 Nodes (16): _llm_client(), main(), _make_event(), GraduationEvent, str, Example: Pump.fun graduation snipe agent (v0.12.0).  Offline by default (stub LL, Choose between the offline stub and a real Groq client via env flag., _StubLLM (+8 more)
 
 ### Community 116 - "Community 116"
-Cohesion: 0.17
-Nodes (13): LLMResult, Message, LLMResult, Message, LLMResult, Message, Message, bool (+5 more)
+Cohesion: 0.15
+Nodes (15): LLMResult, Message, main(), LLMResult, Message, _StubLLM, LLMResult, Message (+7 more)
 
 ### Community 117 - "Community 117"
 Cohesion: 0.14
 Nodes (13): build_graduation(), Agent D — Pump.fun graduation snipe (v0.12.0).  When a Pump.fun token graduates, Build and compile the graduation snipe graph.      Signature mirrors ``build_sni, DecisionLog, Graph, int, KnowledgePack, LLMClient (+5 more)
 
 ### Community 118 - "Community 118"
-Cohesion: 0.23
-Nodes (11): bool, float, int, LLMResult, Message, str, bool, float (+3 more)
+Cohesion: 0.12
+Nodes (40): RateLimit, Per-model limits. None means unlimited. Real numbers come from the platform., KeyPool, Round-robin pool of API keys with per-key cooldown on rate limit., One (provider, model) tuple inside a tier preset., TierSpec, LLMRateLimitError, LLMTimeoutError (+32 more)
 
 ### Community 119 - "Community 119"
 Cohesion: 0.15
-Nodes (11): build_confluence(), Agent E — Smart Money Confluence (v0.14.0 / S5).  Fires when ≥ N pre-vetted smar, Build and compile the Smart Money Confluence graph.      Signature mirrors ``bui, DecisionLog, Graph, int, KnowledgePack, LLMClient (+3 more)
+Nodes (15): Any, bool, str, Tool, ToolResult, Generic tool machinery (chain-agnostic). Domain providers live in ``trading``., A registry of tools the caller injects for agent/LLM nodes to use., Holds named tools and runs them by name (safely). (+7 more)
 
 ### Community 120 - "Community 120"
-Cohesion: 0.27
-Nodes (6): Conditional transitions between nodes., The graph engine: compile nodes + edges into a runnable agent.  Routing rule: if, Engine lifecycle hooks.  Lightweight seam for observability: the engine fires th, Generic, chain-agnostic graph engine. Must not import from ``trading``., Node primitives.  A node is the unit of work. Every node exposes the same tiny i, Core state primitives that flow through a graph.  The engine uses a hybrid model
+Cohesion: 0.22
+Nodes (23): PositionContext, PositionState, _ctx(), _pstate(), PositionContext, PositionState, Tests for position-lifecycle rule nodes (v0.13.0 / PL1)., Emergency must fire even when SL would also fire. (+15 more)
 
 ### Community 121 - "Community 121"
-Cohesion: 0.38
-Nodes (10): Graph, Graph, Tests for the M4 observability layer (hooks, logging, trace export)., _simple_graph(), test_async_hook_supported(), test_error_hook_fires_on_node_failure(), test_hook_error_does_not_break_graph(), test_hooks_fire_in_order() (+2 more)
+Cohesion: 0.15
+Nodes (13): Sliding-window counters for one router entry., Return True if a new request is allowed under current limits., Record a successful request with its token usage., _Throttle, bool, float, int, LLMClient (+5 more)
 
 ### Community 122 - "Community 122"
-Cohesion: 0.22
-Nodes (9): build_sniper(), Build and compile the sniper graph.      If ``llm_client`` is None (or config ke, Build and compile the sniper graph.      If ``llm_client`` is None (or config ke, DecisionLog, Graph, int, KnowledgePack, LLMClient (+1 more)
+Cohesion: 0.14
+Nodes (14): build_sniper(), Build and compile the sniper graph.      If ``llm_client`` is None (or config ke, Build and compile the sniper graph.      If ``llm_client`` is None (or config ke, main(), Example: the auto-snipe agent in pure-rule (fast) vs LLM/hybrid mode.  Shows the, _StubLLM, LLMResult, Message (+6 more)
 
 ### Community 123 - "Community 123"
-Cohesion: 0.36
-Nodes (4): Raise on hard errors; return a list of soft warnings., Condition, str, str
+Cohesion: 0.23
+Nodes (6): Raise on hard errors; return a list of soft warnings., Command, Condition, State, str, str
 
 ### Community 124 - "Community 124"
-Cohesion: 0.31
-Nodes (5): main(), Example: the auto-snipe agent in pure-rule (fast) vs LLM/hybrid mode.  Shows the, _StubLLM, LLMResult, Message
+Cohesion: 0.18
+Nodes (22): PanelExecutionError, Raised when a specialist listed in ``required`` fails., _const_specialist(), _failing_specialist(), _identity_aggregator(), _peek_panel_specialist(), Any, Exception (+14 more)
 
 ### Community 125 - "Community 125"
 Cohesion: 0.38
 Nodes (5): Resolve keys. Literal ``keys`` win (testing); else read ``key_envs`` from env., KeyPool, str, KeyPool, str
 
 ### Community 126 - "Community 126"
-Cohesion: 0.33
-Nodes (7): decide_buy(), decide_skip(), dummy_prompt(), dummy_result_fn(), Command, State, safety_gate()
+Cohesion: 0.20
+Nodes (16): Aggregator, Multi-agent panel — run multiple specialist sub-graphs and merge verdicts.  Rule, PanelNode + PanelDecisionNode — rule-orchestrated multi-specialist nodes.  Both, Run a single specialist sub-graph, capturing exceptions for caller., Execute the specialist sub-graphs.      Returns ``(results, failures, short_circ, Stash failure info into ``state.scratch["_panel_failures"][panel_name]``., _record_failures(), _run_one() (+8 more)
 
 ### Community 127 - "Community 127"
 Cohesion: 0.53
@@ -650,25 +662,69 @@ Nodes (4): bool, State, bool, State
 Cohesion: 0.40
 Nodes (4): LLMResult, Message, LLMResult, Message
 
+### Community 131 - "Community 131"
+Cohesion: 0.16
+Nodes (16): Backtester, Runs a graph over a dataset and returns a :class:`BacktestResult`., LLMResult, Message, str, Graph, _dataset(), _FakeLLM (+8 more)
+
+### Community 136 - "Community 136"
+Cohesion: 0.17
+Nodes (19): _build_clients_by_provider(), _discover_keys(), _load_env_file(), main(), Path, KOL Copy-Trade with TIER_SPEED / TIER_QUALITY / TIER_VOLUME router presets.  v0., Build a client per provider, only for those with keys in env.      Returns a dic, _seed_pack() (+11 more)
+
+### Community 137 - "Community 137"
+Cohesion: 0.12
+Nodes (19): Build a one-node Graph that wraps a single :class:`LLMNode`.      The wrapped LL, single_llm_specialist(), DummyVerdict, _prompt(), Message, State, str, Tests for the single_llm_specialist helper. (+11 more)
+
+### Community 138 - "Community 138"
+Cohesion: 0.17
+Nodes (16): AnalystVerdict, check_rug(), CheckRugInput, get_smart_money_buys(), main(), int, Example: LLM-driven tool-use loop wired into an analyst-style decision.  Demonst, Pretend RugCheck lookup. In production this would be a real API call. (+8 more)
+
+### Community 139 - "Community 139"
+Cohesion: 0.10
+Nodes (19): 10. Dependensi, 11. Release, 1. Tujuan, 2. Keputusan desain (final), 3. Public API, 4. Execution semantik, 5. State conventions, 6. Helper for simple specialists (+11 more)
+
+### Community 140 - "Community 140"
+Cohesion: 0.16
+Nodes (14): _llm_client(), main(), LLMResult, Message, Example: position-lifecycle helpers (v0.13.0 / PL1).  Offline by default (stub L, _StubLLM, LLMResult, Message (+6 more)
+
+### Community 141 - "Community 141"
+Cohesion: 0.24
+Nodes (17): PanelDecisionNode, Terminal panel — aggregator result becomes ``state.output``, graph terminates., _const_specialist(), _identity(), Any, Graph, State, str (+9 more)
+
+### Community 142 - "Community 142"
+Cohesion: 0.14
+Nodes (13): build_lifecycle(), Agent E — Position Lifecycle Helpers (v0.13.0 / PL1).  First position-management, Build and compile the position-lifecycle graph.      Signature mirrors `build_sn, DecisionLog, Graph, int, KnowledgePack, LLMClient (+5 more)
+
+### Community 143 - "Community 143"
+Cohesion: 0.53
+Nodes (3): main(), Example: scanner + observability (logging hooks) + memory (blacklist, decision l, _StubLLM
+
+### Community 144 - "Community 144"
+Cohesion: 0.53
+Nodes (4): LLMResult, Message, LLMResult, Message
+
+### Community 145 - "Community 145"
+Cohesion: 0.40
+Nodes (4): LLMResult, Message, LLMResult, Message
+
 ## Knowledge Gaps
-- **563 isolated node(s):** `LLMClient`, `int`, `Message`, `LLMResult`, `Message` (+558 more)
+- **624 isolated node(s):** `LLMClient`, `int`, `Message`, `LLMResult`, `Message` (+619 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **15 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **16 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `LLMResult` connect `Community 36` to `LLM Client & Guardrails`, `KOL Audit Mode Tests`, `Rate Limit & LLM Router`, `KOL Strategy Agent`, `Backtester & Runner`, `Scanner Agent & Analyst`, `Analyst Prompt Engine`, `Router Tier & Tests`, `Sniper Agent`, `Tool Use Node & Tests`, `KOL Confirmed Mode Tests`, `KOL Reflective Loop Tests`, `LLM Router & Entry Tests`, `Community 29`, `Community 34`, `Community 40`, `Community 41`, `Community 46`, `Community 59`, `Community 62`, `Community 63`, `Community 71`, `Community 72`, `Community 83`, `Community 85`, `Community 96`, `Community 100`, `Community 107`, `Community 116`, `Community 118`, `Community 124`, `Community 127`?**
-  _High betweenness centrality (0.141) - this node is a cross-community bridge._
-- **Why does `State` connect `Decision Log & Reflection` to `Community 128`, `LLM Client & Guardrails`, `KOL Copy-Trade Example`, `KOL Strategy Agent`, `Core Graph & Edges`, `State Machine & Memory`, `Scanner Agent & Analyst`, `Analyst Prompt Engine`, `Agent Registry & Graph`, `KOL Nodes & Fast Market`, `Sniper Agent`, `Tool Use Node & Tests`, `KOL Confirmed Mode Tests`, `Sniper Nodes & Decisions`, `KOL Reflective Loop Tests`, `Community 26`, `Community 29`, `Community 34`, `Community 38`, `Community 39`, `Community 40`, `Community 41`, `Community 46`, `Community 54`, `Community 55`, `Community 62`, `Community 63`, `Community 71`, `Community 72`, `Community 78`, `Community 82`, `Community 85`, `Community 93`, `Community 97`, `Community 99`, `Community 100`, `Community 102`, `Community 114`, `Community 120`, `Community 121`, `Community 123`, `Community 124`, `Community 126`?**
-  _High betweenness centrality (0.128) - this node is a cross-community bridge._
-- **Why does `State` connect `Community 35` to `Community 96`, `LLM Key Pool & Config`, `Community 37`, `Community 42`, `Community 76`, `Community 109`, `Community 110`, `Community 112`, `Community 49`, `KOL Nodes & Fast Market`, `Community 115`, `Community 83`, `Community 51`, `Sniper Nodes & Decisions`, `LLM Router & Entry Tests`, `Community 59`, `Community 28`?**
-  _High betweenness centrality (0.083) - this node is a cross-community bridge._
-- **Are the 218 inferred relationships involving `LLMResult` (e.g. with `ConfluenceConfig` and `LLMResult`) actually correct?**
-  _`LLMResult` has 218 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `State` connect `Core Graph & Edges` to `Community 128`, `LLM Client & Guardrails`, `KOL Copy-Trade Example`, `KOL Strategy Agent`, `Community 136`, `State Machine & Memory`, `Community 138`, `Community 137`, `Scanner Agent & Analyst`, `Community 141`, `Analyst Prompt Engine`, `Community 143`, `Agent Registry & Graph`, `KOL Nodes & Fast Market`, `Sniper Agent`, `KOL Confirmed Mode Tests`, `Decision Log & Reflection`, `Sniper Nodes & Decisions`, `KOL Reflective Loop Tests`, `Community 26`, `Community 27`, `Community 29`, `Community 34`, `Community 38`, `Community 39`, `Community 40`, `Community 41`, `Community 46`, `Community 54`, `Community 55`, `Community 62`, `Community 63`, `Community 72`, `Community 78`, `Community 80`, `Community 82`, `Community 85`, `Community 93`, `Community 97`, `Community 99`, `Community 100`, `Community 102`, `Community 105`, `Community 114`, `Community 122`, `Community 123`, `Community 124`?**
+  _High betweenness centrality (0.135) - this node is a cross-community bridge._
+- **Why does `LLMResult` connect `Community 36` to `LLM Client & Guardrails`, `Community 131`, `Rate Limit & LLM Router`, `KOL Audit Mode Tests`, `KOL Strategy Agent`, `Backtester & Runner`, `Community 137`, `Community 138`, `Scanner Agent & Analyst`, `Analyst Prompt Engine`, `Router Tier & Tests`, `Community 143`, `Community 144`, `Community 145`, `Sniper Agent`, `KOL Confirmed Mode Tests`, `KOL Reflective Loop Tests`, `LLM Router & Entry Tests`, `Community 29`, `Community 34`, `Community 40`, `Community 41`, `Community 46`, `Community 59`, `Community 62`, `Community 63`, `Community 72`, `Community 83`, `Community 96`, `Community 100`, `Community 107`, `Community 116`, `Community 118`, `Community 121`, `Community 122`, `Community 127`?**
+  _High betweenness centrality (0.124) - this node is a cross-community bridge._
+- **Why does `State` connect `Community 96` to `LLM Key Pool & Config`, `Community 35`, `Community 37`, `Community 42`, `Community 140`, `Community 76`, `Community 109`, `Community 120`, `Community 112`, `Community 49`, `KOL Nodes & Fast Market`, `Community 115`, `Community 83`, `Community 51`, `Community 110`, `LLM Router & Entry Tests`, `Community 59`, `Community 28`?**
+  _High betweenness centrality (0.077) - this node is a cross-community bridge._
+- **Are the 223 inferred relationships involving `LLMResult` (e.g. with `ConfluenceConfig` and `LLMResult`) actually correct?**
+  _`LLMResult` has 223 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 140 inferred relationships involving `State` (e.g. with `_run_case()` and `_run_case()`) actually correct?**
   _`State` has 140 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 206 inferred relationships involving `Message` (e.g. with `DecisionFallbackFn` and `LLMResult`) actually correct?**
   _`Message` has 206 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 52 inferred relationships involving `State` (e.g. with `Condition` and `Edge`) actually correct?**
-  _`State` has 52 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 71 inferred relationships involving `State` (e.g. with `Condition` and `Edge`) actually correct?**
+  _`State` has 71 INFERRED edges - model-reasoned connections that need verification._
