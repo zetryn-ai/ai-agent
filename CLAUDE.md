@@ -52,38 +52,29 @@ This boundary is reaffirmed at design-doc level in
 If the boundary ever conflicts with an apparent feature request, ask
 the user to clarify before crossing it.
 
-## Commit identity (MUST ASK BEFORE EVERY COMMIT/PUSH/PR)
+## Commit identity (ROLLING RANDOM — no need to ask)
 
-The user actively uses **three** GitHub identities with distinct PATs,
-wired as three separate MCP servers:
+Five GitHub identities are available, all wired via SSH host aliases in `~/.ssh/config`:
 
-| MCP server | Tool prefix | Identity | When to use |
-|---|---|---|---|
-| `github@aldirrss` | `mcp__github_aldirrss__*` | personal `aldirrss` | personal repos / commits authored as the user |
-| `github@cry` | `mcp__github_cry__*` | alternate `cry` | as decided per task |
-| `github@zetryn` | `mcp__github_zetryn__*` | org `zetryn` | commits to `zetryn/*` repos that should appear as authored by zetryn |
+| Identity | Email | SSH host |
+|---|---|---|
+| `aldirrss` | aldialputra@gmail.com | `github_aldi` |
+| `cry` | cryptowave3142@gmail.com | `github_cry` |
+| `zetryn` | zetrynai@gmail.com | `github_zetryn` |
+| `cdexio` | cdexioagent@gmail.com | `github_cdexio` |
+| `lema` | lemacoreofficial@gmail.com | `github_lema` |
 
-**Hard rule:** before any `git commit`, `git push`, or PR creation,
-**ASK the user which identity to use.** Do NOT default to a previously
-used identity, do NOT infer from the working directory or remote name.
-The user explicitly stated they will be actively rotating between all
-three — silent defaults will produce wrong commit attribution.
+**Rule:** Always commit and push via `scripts/commit-as.sh random "message"`.
+Do NOT ask the user which identity to use — just pick `random` and let the
+script roll. No need to confirm before or after.
 
-Phrase the question crisply, e.g.:
-> "Mau commit ini pakai MCP yang mana — `aldirrss`, `cry`, atau `zetryn`?"
+```bash
+./scripts/commit-as.sh random "feat: your message here"
+```
 
-Implications by chosen identity:
-- **Local `git commit` + `git push`** → author resolves from
-  `git config user.email` (currently `aldirrss`). Use this when the
-  user picks `aldirrss`.
-- **`mcp__github_zetryn__push_files`** → server-side commit signed as
-  `zetryn`, auto-Verified badge in the GitHub UI.
-- **`mcp__github_cry__push_files`** → server-side commit signed as
-  `cry`, same Verified treatment.
-
-This rule overrides any earlier session-level pattern. Do not skip it
-even for "tiny" commits — the user prefers a one-line clarifying
-question over a wrong-author commit landing on `main`.
+The script picks one of the five identities at random, sets both `GIT_AUTHOR_*`
+and `GIT_COMMITTER_*` env vars, commits, then pushes via the matching SSH host.
+The same identity may appear multiple times in a row — that is expected.
 
 ## Commands
 
