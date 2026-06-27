@@ -1,5 +1,9 @@
 # Zetryn AI Agent Trading Framework
 
+[![PyPI version](https://img.shields.io/pypi/v/zetryn-trading.svg)](https://pypi.org/project/zetryn-trading/)
+[![Python](https://img.shields.io/pypi/pyversions/zetryn-trading.svg)](https://pypi.org/project/zetryn-trading/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 **AI Agent Trading Framework from Zetryn AI.**
 
 A Python framework that turns raw Solana memecoin data into structured,
