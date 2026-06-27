@@ -5,6 +5,51 @@ All notable changes to `zetryn-trading` will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0] — 2026-06-27
+
+A1 ships: **Organic Growth Detector** — first A-tier strategy. A triage
+filter that classifies a token's post-launch time-series as organic,
+suspicious, or manipulated. Promotes scanner candidates with confirmed
+organic growth shape; hard-aborts on manipulation tells without scoring.
+
+### Added
+- **`build_organic_detector(...)`** in `strategies.agents.growth_detector`
+  — compiled graph with four modes (`rule` / `llm` / `hybrid` /
+  `hybrid_audit`). Reflective loop wired into `llm` / `hybrid` when
+  `decision_log` is provided. Audit fires for **all** classifications
+  (organic, suspicious, and manipulated) — demotions are equally worth
+  auditing.
+- **New schemas in `trading/schemas.py`**: `GrowthSnapshot` (12 fields:
+  candle_count, price_trajectory, sell_presence_pct, unique_buyer_trend,
+  holder_growth_rate, has_healthy_pullback, max_drawdown_pct,
+  whale_volume_pct, volume_acceleration), `GrowthConfig` (7 thresholds),
+  `GrowthContext`, `GrowthVerdict`.
+- **`strategies/nodes/growth_nodes.py`** — `fast_safety` (re-export),
+  `observation_gate` (min seconds + min candles), `manipulation_gate`
+  (vertical pump + zero sellers hard abort; extreme whale hard abort),
+  `organic_classify` (5-dim scorer: trajectory, sells, buyers, pullback,
+  whale), `growth_prompt` / `make_growth_prompt` / `growth_result` /
+  `growth_guardrail` (can only demote, never promote) /
+  `make_audit_dispatch`.
+- **`examples/run_growth_detector.py`** — offline stub demo across 9
+  scenarios. Opt-in real Groq via `ZETRYN_GROWTH_USE_GROQ=1`.
+- **Tests** — `test_growth_nodes.py` (12), `test_growth_agent.py` (14).
+  All tests pass, ruff clean.
+
+### Design notes
+- **Three-outcome model** — unlike entry agents (buy/skip), the growth
+  detector maps: `organic→buy` (promote), `suspicious→skip` (pass
+  through), `manipulated→abort` (cool down). `flags["classification"]`
+  carries the string label; `scores["organic_score"]` carries the raw
+  0.0–1.0 value for calibration.
+- **Two hard-abort layers before scoring** — `manipulation_gate` catches
+  clear tells (vertical pump + zero sellers, extreme whale > 85%) before
+  the 5-dim scorer runs. Borderline cases (vertical pump WITH sellers) go
+  through scoring where the trajectory dimension penalizes them.
+- **Guardrail in hybrid mode** — can only demote classification, never
+  promote. Vertical pump + zero sellers always abort even if LLM says
+  organic.
+
 ## [0.15.0] — 2026-06-27
 
 S6 ships: **Early-Stage Dip Buy** — the sixth (and final) S-tier entry

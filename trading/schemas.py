@@ -304,7 +304,7 @@ class Decision(BaseModel):
     size: float | None = None
     scores: dict[str, float] = Field(default_factory=dict)  # safety/market/social/...
     reasons: list[str] = Field(default_factory=list)
-    flags: dict[str, bool] = Field(default_factory=dict)  # rug_risk, llm_failed
+    flags: dict[str, Any] = Field(default_factory=dict)  # rug_risk, llm_failed, classification
     meta: dict[str, Any] = Field(default_factory=dict)  # run_id, latency_ms
     # Full analyst verdict (M8+). Populated by AI-first scanners; None for
     # hard-gate rejects and legacy/rule-only paths.
@@ -784,3 +784,110 @@ class DipBuyVerdict(BaseModel):
     size_pct: float = Field(ge=0, le=1)
     reasoning: str = ""
     concerns: list[str] = Field(default_factory=list)
+
+
+# -- Organic Growth Detector (v0.16.0 / A1) ----------------------------------
+#
+# Triage filter — classifies a token's post-launch time-series as organic,
+# suspicious, or manipulated based on chart-pattern features. The bot
+# watches candle/trade data, computes aggregate signals, and pushes a
+# GrowthContext. The framework scores the signals and returns a Decision
+# with action ∈ {buy=promote, skip=neutral, abort=manipulated}.
+
+
+class GrowthSnapshot(BaseModel):
+    """Aggregate time-series features the bot computes from candle/trade data.
+
+    The bot owns the time-series (candles, per-minute unique buyers,
+    holder history) and distils it into this flat snapshot. The framework
+    never fetches or aggregates — it only reads and scores.
+    """
+
+    mint: str
+    detected_at_ts: float
+    observation_seconds: float = Field(ge=0)
+    candle_count: int = Field(ge=0)
+
+    # Price pattern — bot classifies from its candle sequence
+    price_trajectory: Literal[
+        "steady_climb", "vertical_pump", "volatile", "flat", "declining"
+    ]
+
+    # Sell presence — key manipulation tell
+    sell_presence_pct: float = Field(
+        ge=0, le=1,
+        description="Fraction of candles with meaningful sell volume. "
+        "Near-zero = zero-sell coordinated pump.",
+    )
+
+    # Buyer dynamics
+    unique_buyer_trend: float = Field(
+        ge=-1, le=1, default=0.0,
+        description="Positive = new unique buyers joining over the window.",
+    )
+    holder_growth_rate: float = Field(
+        ge=0, default=0.0,
+        description="New holders per minute over the observation window.",
+    )
+
+    # Pullback pattern
+    has_healthy_pullback: bool = False
+    max_drawdown_pct: float = Field(
+        ge=0, le=1, default=0.0,
+        description="Worst intra-window pullback. Organic = 0.05–0.25.",
+    )
+
+    # Volume pattern
+    whale_volume_pct: float = Field(
+        ge=0, le=1, default=0.0,
+        description="Fraction of volume from whale wallets.",
+    )
+    volume_acceleration: float = Field(
+        ge=0, default=1.0,
+        description="recent_volume / early_volume. > 1.5 = accelerating demand.",
+    )
+
+
+class GrowthConfig(BaseModel):
+    """Tunables for the Organic Growth Detector."""
+
+    decision_mode: Literal["rule", "llm", "hybrid", "hybrid_audit"] = "rule"
+
+    # Observation gate
+    min_observation_seconds: float = 120.0
+    min_candle_count: int = 5
+
+    # Scoring thresholds
+    min_sell_presence_pct: float = Field(ge=0, le=1, default=0.03)
+    max_sell_presence_pct: float = Field(ge=0, le=1, default=0.70)
+    min_unique_buyer_trend: float = Field(ge=-1, le=1, default=-0.20)
+    max_whale_volume_pct: float = Field(ge=0, le=1, default=0.65)
+
+    # Classification thresholds (organic_score out of 1.0)
+    organic_score_threshold: float = Field(ge=0, le=1, default=0.65)
+    suspicious_score_threshold: float = Field(ge=0, le=1, default=0.35)
+
+
+@dataclass
+class GrowthContext:
+    """What the bot hands `build_organic_detector(...)` for one token."""
+
+    token: TokenInput
+    snapshot: GrowthSnapshot
+    config: GrowthConfig = field(default_factory=GrowthConfig)
+
+
+class GrowthVerdict(BaseModel):
+    """Structured LLM output for the organic growth classifier.
+
+    `classification` maps to `Decision.action`:
+      organic     → buy   (promote scanner candidate)
+      suspicious  → skip  (neutral — normal scanner flow)
+      manipulated → abort (demote — skip scanner, add to cooldown)
+    """
+
+    classification: Literal["organic", "suspicious", "manipulated"]
+    confidence: float = Field(ge=0, le=1)
+    promote_scanner: bool = True
+    signals: list[str] = Field(default_factory=list)
+    reasoning: str = ""

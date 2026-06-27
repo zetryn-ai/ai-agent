@@ -50,7 +50,7 @@ B-tier intentionally absent — anything that would land there is either a confi
 
 | Strategy | Signal mechanic | Implemented |
 |---|---|---|
-| **Organic growth detector** | Watch the post-launch time-series: organic growth = steady climb + healthy pullbacks + rising unique-buyer count. Manipulation tell = vertical line with zero sells. Distinct from snapshot scanner (chart-pattern feature set on time series). Useful as a triage filter that promotes scanner candidates to higher-confidence buys. | ⬜ not built |
+| **Organic growth detector** | Watch the post-launch time-series: organic growth = steady climb + healthy pullbacks + rising unique-buyer count. Manipulation tell = vertical line with zero sells. Distinct from snapshot scanner (chart-pattern feature set on time series). Triage filter: `organic→buy` (promote), `suspicious→skip`, `manipulated→abort`. | ✅ [build_organic_detector](../strategies/agents/growth_detector.py) |
 
 A-tier is intentionally short. If a strategy is worth doing, it's almost always S; the few that don't qualify usually overlap heavily with an S row.
 

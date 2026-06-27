@@ -8,6 +8,7 @@ demonstrate and test the framework against the ``trading`` contract.
 from .agents.confluence import build_confluence
 from .agents.dip_buy import build_dip_buy
 from .agents.graduation import build_graduation
+from .agents.growth_detector import build_organic_detector
 from .agents.kol_copytrade import build_kol_copytrade
 from .agents.lifecycle import build_lifecycle
 from .agents.scanner import build_scanner
@@ -24,6 +25,7 @@ __all__ = [
     "build_confluence",
     "build_dip_buy",
     "build_graduation",
+    "build_organic_detector",
     "build_kol_copytrade",
     "build_lifecycle",
     "build_scanner",
