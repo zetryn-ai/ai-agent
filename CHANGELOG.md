@@ -5,6 +5,47 @@ All notable changes to `zetryn-trading` will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] — 2026-06-27
+
+S5 ships: **Smart Money Confluence** — the fifth S-tier entry agent. Fires
+when ≥ N pre-vetted smart wallets have accumulated the same token within a
+rolling window. Multi-wallet correlation is the primary signal; higher
+precision than any single-wallet copy because independent actors must
+converge on the same thesis.
+
+### Added
+- **`build_confluence(...)`** in `strategies.agents.confluence` — compiled
+  graph with four modes (`rule` / `llm` / `hybrid` / `hybrid_audit`).
+  Optional `registry: SmartWalletRegistry` parameter; without it, gate
+  falls back to `ConfluenceConfig` per-wallet floors only (no whitelist).
+  Reflective loop wired into `llm` / `hybrid` when a `decision_log` is
+  provided.
+- **`SmartWalletRegistry`** in `strategies.smart_wallet_registry` — mirrors
+  `KOLRegistry` pattern. Loads `smart_wallet_whitelist.json` from a
+  `KnowledgePack`. Exposes `get()`, `passes_global_floor()`, `from_pack()`.
+- **New schemas in `trading/schemas.py`**: `SmartWalletProfile`,
+  `SmartWalletAccumulation`, `ConfluenceEvent`, `ConfluenceConfig`,
+  `ConfluenceContext`, `ConfluenceVerdict`.
+- **`strategies/nodes/confluence_nodes.py`** — `fast_safety` (re-export),
+  `make_confluence_gate(registry)` (factory: wallet dedup, quality gate,
+  count gate), `market_gate`, `rule_size_and_buy` (wallet_mult ×
+  quality_mult × top10_penalty formula), `confluence_prompt` /
+  `confluence_result` / `confluence_guardrail` / `make_audit_dispatch`.
+- **`examples/run_confluence.py`** — offline stub demo across 5 scenarios.
+  Opt-in real Groq via `ZETRYN_CONFLUENCE_USE_GROQ=1`.
+- **Tests** — `test_confluence_nodes.py` (13), `test_confluence_agent.py`
+  (15). All tests pass, ruff clean.
+
+### Design notes
+- **Distinct from KOL copy-trade**: KOL fires on a SINGLE named wallet's
+  buy; confluence fires on ≥ N ANONYMOUS wallets converging on the same
+  token. Different event shape (`ConfluenceEvent` vs `KOLBuyEvent`),
+  different registry (`SmartWalletRegistry` vs `KOLRegistry`), different
+  primary signal (correlated accumulation vs influencer-copy).
+- **`confluence_gate` is a factory** (`make_confluence_gate(registry)`)
+  because the registry is optional — without it the gate degrades
+  gracefully to config-floor checks only.
+
 ## [0.13.0] — 2026-06-27
 
 PL1 ships: the first **position-management agent**. Up to v0.12 every

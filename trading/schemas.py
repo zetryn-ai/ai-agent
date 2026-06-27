@@ -587,3 +587,99 @@ class LifecycleVerdict(BaseModel):
     confidence: float = Field(ge=0, le=1)
     reasoning: str = ""
     concerns: list[str] = Field(default_factory=list)
+
+
+# -- Smart Money Confluence (v0.14.0 / S5) -----------------------------------
+#
+# Fires when ≥ N pre-vetted smart wallets have accumulated the same token
+# within a rolling window. The bot subscribes to wallet feeds (Cielo, GMGN,
+# Helius), aggregates per-mint accumulations, fills a `ConfluenceEvent`, and
+# hands the framework a `ConfluenceContext`. The framework returns a
+# `Decision`; the bot executes.
+
+
+class SmartWalletProfile(BaseModel):
+    """Historical performance of one smart wallet, bot-computed offline.
+
+    Stored inside the bot's `KnowledgePack` under
+    `data/smart_wallet_whitelist.json -> wallets[<address>]`. Unlike
+    `KOLProfile`, smart wallets are anonymous — no name or exit_pattern;
+    edge comes from on-chain track record only.
+    """
+
+    hit_rate: float = Field(ge=0, le=1, default=0.0)
+    avg_pnl_pct: float = 0.0
+    trades_30d: int = 0
+    tier: Literal["S", "A", "B", "C"] = "C"
+    min_sol_to_copy: float = 0.0
+
+
+class SmartWalletAccumulation(BaseModel):
+    """One smart wallet's buy event within the rolling window.
+
+    Built by the BOT from its wallet feed (Cielo, GMGN, Helius, custom
+    indexer). The framework never produces one.
+    """
+
+    wallet: str
+    mint: str
+    sol_amount: float = Field(ge=0)
+    detected_at_ts: float
+    block_age_seconds: float = Field(ge=0)
+
+
+class ConfluenceEvent(BaseModel):
+    """Aggregated confluence snapshot the bot pushes per detected signal.
+
+    The bot fills `accumulations` with every qualifying buy in the window.
+    Framework nodes derive stats (unique wallet count, total SOL, avg
+    quality) from the list — no pre-aggregation required.
+    """
+
+    mint: str
+    detected_at_ts: float
+    window_seconds: float
+    accumulations: list[SmartWalletAccumulation] = Field(default_factory=list)
+
+
+class ConfluenceConfig(BaseModel):
+    """Tunables for the Smart Money Confluence strategy."""
+
+    decision_mode: Literal["rule", "llm", "hybrid", "hybrid_audit"] = "rule"
+
+    # Confluence gate
+    min_wallet_count: int = Field(ge=1, default=5)
+    min_sol_per_wallet: float = 0.5
+    max_signal_age_seconds: float = 60.0
+    min_hit_rate: float = Field(ge=0, le=1, default=0.35)
+    min_tier: Literal["S", "A", "B", "C"] = "B"
+
+    # Market gates (mirror SniperConfig style)
+    min_liquidity_usd: float = 3_000
+    min_volume_1h: float = 0.0
+    max_top10_pct: float = 0.6
+    max_bundler_wallets: int = 3
+    max_sniper_wallets: int = 15
+
+    # Sizing
+    base_size: float = 1.0
+    max_size: float = 5.0
+
+
+@dataclass
+class ConfluenceContext:
+    """What the bot hands `build_confluence(...)` for one signal."""
+
+    token: TokenInput
+    event: ConfluenceEvent
+    config: ConfluenceConfig = field(default_factory=ConfluenceConfig)
+
+
+class ConfluenceVerdict(BaseModel):
+    """Structured LLM output for the confluence decider."""
+
+    action: Literal["buy", "skip", "abort"]
+    confidence: float = Field(ge=0, le=1)
+    size_pct: float = Field(ge=0, le=1)
+    reasoning: str = ""
+    concerns: list[str] = Field(default_factory=list)
