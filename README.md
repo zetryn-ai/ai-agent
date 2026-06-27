@@ -454,7 +454,8 @@ No API key required. Tests use offline stubs + `MockDataProvider`.
 
 | Doc | Purpose | Update cadence |
 |---|---|---|
-| [CAPABILITIES.md](docs/CAPABILITIES.md) | **Source of truth** — capability matrix, roadmap, M8 closeout evidence | Every release |
+| [**GUIDE.md**](docs/GUIDE.md) | **Developer guide** — providers, models, key rotation, knowledge, skills, agent reference, backtesting | Per feature |
+| [CAPABILITIES.md](docs/CAPABILITIES.md) | **Source of truth** — capability matrix, roadmap, milestone status | Every release |
 | [CHANGELOG.md](CHANGELOG.md) | Version-by-version notes | Every release |
 | [plans/2026-06-23-…](docs/plans/2026-06-23-zetryn-agent-framework-design.md) | Architecture Decision Record — original framework design | Frozen (historical) |
 | [plans/2026-06-24-…](docs/plans/2026-06-24-ai-first-pivot.md) | Architecture Decision Record — AI-first pivot rationale | Frozen (historical) |
