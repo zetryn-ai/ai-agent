@@ -11,6 +11,7 @@ Two places, no third:
 | Roadmap feature (new strategy, new core capability, items in `CAPABILITIES.md §6`) | **One** markdown file in `docs/plans/YYYY-MM-DD-<slug>.md`. Include `**Date:**` and `**Status:**` headers. Also add a row to `docs/plans/README.md`. |
 | Anything else (refactor, bugfix, doc cleanup, tooling, dep bump) | Append **one row** to `docs/maintenance-log.md` (newest on top). Columns: Date, Description, Action, Before, After. |
 | User-facing release notes (semver tagged) | `CHANGELOG.md` at repo root. |
+| Strategy questions ("what's next?", "what exists?", "S-tier ideas?") | Consult `docs/STRATEGIES.md` first — it's the catalog of shipped + planned + rejected strategies. Do NOT propose new strategies without checking it. Update it when a strategy ships or a new one is approved. |
 
 **Hard rule — DO NOT create `docs/superpowers/` or `docs/superpowers/specs/` again.** That layout was retired on 2026-06-27 because it duplicated `docs/plans/` and burned tokens drafting in one place only to move it later. Write the design doc directly in `docs/plans/` from the start.
 

@@ -8,6 +8,11 @@ For non-roadmap changes (refactors, bug fixes, doc updates, etc.) see
 [../maintenance-log.md](../maintenance-log.md) — do NOT create a plan
 doc for those.
 
+For the strategy catalog (shipped + planned + considered-and-rejected)
+see [../STRATEGIES.md](../STRATEGIES.md) — single source of truth for
+"what strategies exist / what comes next". Refer to it before proposing
+any new strategy.
+
 | Date | Plan | Status |
 |---|---|---|
 | 2026-06-23 | [Zetryn Agent Framework — Design](2026-06-23-zetryn-agent-framework-design.md) | Historical (ADR) |
