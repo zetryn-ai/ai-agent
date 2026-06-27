@@ -1,7 +1,7 @@
 # Strategy #4 — Pump.fun Graduation Snipe (v0.12.0)
 
 **Date:** 2026-06-27
-**Status:** Approved — ready for implementation
+**Status:** Shipped (v0.12.0)
 **Version target:** v0.12.0
 
 ---
@@ -205,7 +205,7 @@ examples/run_graduation.py                      ← offline stub + ZETRYN_GRAD_U
 tests/test_graduation_nodes.py                  ← gate rejection cases
 tests/test_graduation_agent.py                  ← mode wiring tests
 tests/test_graduation_reflective.py             ← reflective loop tests
-docs/superpowers/specs/2026-06-27-graduation-snipe-strategy-design.md  ← this file
+docs/plans/2026-06-27-graduation-snipe-strategy.md  ← this file
 ```
 
 ### Updated

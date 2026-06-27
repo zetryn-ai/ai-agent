@@ -5,6 +5,39 @@ All notable changes to `zetryn-trading` will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] — 2026-06-27
+
+Strategy #4 ships: the Pump.fun graduation snipe agent. Same shape as the
+existing three (scanner / sniper / KOL copy-trade) — pure-rule fast path,
+optional LLM decide / hybrid with deterministic guardrail, optional
+``hybrid_audit`` for sub-ms rule + async LLM verify, and the same
+reflective loop on the LLM paths.
+
+### Added
+- **`build_graduation(...)`** in `strategies.agents.graduation` — compiled
+  graph with four modes (`rule` / `llm` / `hybrid` / `hybrid_audit`).
+  Reflective loop wired into `llm` / `hybrid` when a `decision_log` is
+  provided; intentionally skipped in `hybrid_audit` to preserve the
+  sub-ms sync path.
+- **New schemas in `trading/schemas.py`**: `GraduationEvent`,
+  `GraduationConfig`, `GraduationContext`, `GraduationVerdict`. All
+  re-exported from `trading/__init__.py`.
+- **`strategies/nodes/graduation_nodes.py`** — `graduation_gate` (6
+  bonding-curve / pair checks), `market_gate`, `rule_size_and_buy`,
+  `graduation_prompt` (+ `make_graduation_prompt` for `KnowledgePack`),
+  `graduation_guardrail`, and `make_audit_dispatch`. `fast_safety` is
+  re-used from the sniper — the contract check is identical.
+- **`examples/run_graduation.py`** — offline stub demo; opt-in real Groq
+  via `ZETRYN_GRAD_USE_GROQ=1`.
+- **Tests** — `test_graduation_nodes.py` (11 cases), `test_graduation_agent.py`
+  (8 cases), `test_graduation_reflective.py` (6 cases). All 283 tests pass,
+  ruff clean.
+
+### Notes
+- Boundary held: the framework defines `GraduationEvent` shape; the bot
+  subscribes to Pump.fun WS, enriches `TokenInput` from Raydium / Helius,
+  and executes. No fetcher, WS subscriber, or RPC call inside the framework.
+
 ## [0.11.0] — 2026-06-27
 
 Two changes ship together: a K7 hotfix that wires the KOL reflective loop

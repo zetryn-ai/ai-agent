@@ -2,6 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Documentation conventions (MUST FOLLOW)
+
+Two places, no third:
+
+| Change type | Where to document |
+|---|---|
+| Roadmap feature (new strategy, new core capability, items in `CAPABILITIES.md §6`) | **One** markdown file in `docs/plans/YYYY-MM-DD-<slug>.md`. Include `**Date:**` and `**Status:**` headers. Also add a row to `docs/plans/README.md`. |
+| Anything else (refactor, bugfix, doc cleanup, tooling, dep bump) | Append **one row** to `docs/maintenance-log.md` (newest on top). Columns: Date, Description, Action, Before, After. |
+| User-facing release notes (semver tagged) | `CHANGELOG.md` at repo root. |
+
+**Hard rule — DO NOT create `docs/superpowers/` or `docs/superpowers/specs/` again.** That layout was retired on 2026-06-27 because it duplicated `docs/plans/` and burned tokens drafting in one place only to move it later. Write the design doc directly in `docs/plans/` from the start.
+
+**Do NOT** create ad-hoc `*.md` files outside these three locations (no `NOTES.md`, no `TODO.md`, no per-feature READMEs scattered through the source tree). If unsure where something belongs, default to `docs/maintenance-log.md`.
+
 ## Framework Boundary (NON-NEGOTIABLE — read first, every session)
 
 **Zetryn Trading is an AI Agent Framework / library.** Public users (their

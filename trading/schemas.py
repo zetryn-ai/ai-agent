@@ -425,3 +425,81 @@ class KOLContext:
     # Used by `kol_quality` to enforce `config.kol_cooldown_seconds`.
     last_copy_ts: float | None = None
     positions: dict[str, Any] = field(default_factory=dict)
+
+
+# -- Graduation snipe strategy (v0.12.0) -------------------------------------
+#
+# Schemas only. The bot subscribes to Pump.fun WS events, fills the
+# `GraduationEvent` from bonding-curve + Raydium pair data, enriches the
+# `TokenInput`, and hands the framework a `GraduationContext`. The framework
+# returns a `Decision`; the bot executes.
+
+
+class GraduationEvent(BaseModel):
+    """Per-graduation snapshot the bot pushes to the framework.
+
+    Captures bonding-curve fill dynamics and the Raydium pair structure at
+    the moment a Pump.fun token graduates. The bot owns the WS subscription
+    and enrichment; the framework only reads.
+    """
+
+    mint: str
+    pair_address: str
+    detected_at_ts: float
+
+    pair_age_seconds: float
+
+    # Bonding curve signals
+    bonding_curve_fill_seconds: float
+    bonding_curve_unique_buyers: int
+    bonding_curve_sol_raised: float
+    bonding_curve_premium_pct: float
+
+    # Raydium pair signals
+    initial_liquidity_sol: float
+    initial_liquidity_token_pct: float
+    lp_burned: bool
+
+
+class GraduationConfig(BaseModel):
+    """Tunables for the Pump.fun graduation snipe strategy."""
+
+    decision_mode: Literal["rule", "llm", "hybrid", "hybrid_audit"] = "rule"
+
+    # Graduation-specific gate thresholds
+    max_fill_seconds: float = 300.0
+    min_unique_buyers: int = 50
+    min_initial_liquidity_sol: float = 30.0
+    require_lp_burned: bool = True
+    max_pair_age_seconds: float = 10.0
+    max_premium_pct: float = 20.0
+
+    # Token-quality gates (mirrors SniperConfig style)
+    min_liquidity_usd: float = 3_000
+    min_volume_1h: float = 0.0
+    max_top10_pct: float = 0.6
+    max_bundler_wallets: int = 3
+    max_sniper_wallets: int = 15
+
+    # Sizing
+    base_size: float = 0.5
+    max_size: float = 2.0
+
+
+@dataclass
+class GraduationContext:
+    """What the bot hands `build_graduation(...)` for one event."""
+
+    token: TokenInput
+    event: GraduationEvent
+    config: GraduationConfig = field(default_factory=GraduationConfig)
+
+
+class GraduationVerdict(BaseModel):
+    """Structured LLM output for the graduation snipe decider."""
+
+    action: Literal["buy", "skip", "abort"]
+    confidence: float = Field(ge=0, le=1)
+    size_pct: float = Field(ge=0, le=1)
+    reasoning: str = ""
+    concerns: list[str] = Field(default_factory=list)
