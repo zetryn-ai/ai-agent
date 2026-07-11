@@ -25,6 +25,7 @@ provide an LLM client.
 from __future__ import annotations
 
 from trading.schemas import FullAnalysis
+from zetryn.analytics import CalibrationMap
 from zetryn.core import END, Graph, RuleNode
 from zetryn.knowledge import KnowledgePack
 from zetryn.llm import LLMClient, LLMNode
@@ -43,6 +44,7 @@ def build_scanner(
     reflect_window: int = 20,
     reflect_feature_keys: list[str] | None = None,
     reflect_top_k: int = 5,
+    calibration: CalibrationMap | None = None,
 ) -> Graph:
     """Build and compile the AI-first scanner graph.
 
@@ -61,12 +63,16 @@ def build_scanner(
     The node is inserted between ``market_gate`` and ``analyst`` so it only
     runs on candidates that survive the hard gates — losers in the gate path
     don't waste a memory read.
+
+    Pass ``calibration`` (a fitted :class:`CalibrationMap`) to translate the
+    analyst's raw ``final_score`` into an empirical win rate before it becomes
+    ``Decision.confidence`` — see ``strategies.backtest.fit_calibration``.
     """
     g = Graph("memecoin_scanner")
     g.add_node(RuleNode("safety_gate", filters.safety_gate))
     g.add_node(RuleNode("intel_gate", filters.intel_gate))
     g.add_node(RuleNode("market_gate", filters.market_gate))
-    g.add_node(RuleNode("finalize", decide.finalize))
+    g.add_node(RuleNode("finalize", decide.make_finalize(calibration)))
     g.add_node(RuleNode("reject", decide.reject))
 
     has_llm = llm_client is not None

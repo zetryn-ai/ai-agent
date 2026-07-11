@@ -84,8 +84,9 @@ def market_gate(state: State) -> None:
     state.scratch["market_ok"] = (
         m.liquidity_usd >= cfg.min_liquidity_usd and m.volume_1h >= cfg.min_volume_1h
     )
-    liq = _clamp(m.liquidity_usd / (cfg.min_liquidity_usd * 5))
-    vol = _clamp(m.volume_1h / (cfg.min_volume_1h * 5))
+    # A zero minimum means "no floor": full score, and no ZeroDivisionError.
+    liq = _clamp(m.liquidity_usd / (cfg.min_liquidity_usd * 5 + 1e-9))
+    vol = _clamp(m.volume_1h / (cfg.min_volume_1h * 5 + 1e-9))
     state.scratch["market_score"] = (liq + vol) / 2
 
 

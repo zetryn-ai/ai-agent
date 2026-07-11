@@ -5,6 +5,52 @@ All notable changes to `zetryn-trading` will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] — 2026-07-11
+
+**M14 Multi-Agent Panel merged + confidence calibration layer.** The
+rule-based panel orchestrator (built on branch since the v0.18.0 era) lands
+on main, and the framework gains its first outcome-feedback primitive: a
+calibration map that turns raw LLM scores into empirical win rates, fed by
+a new closed-trade replay bridge.
+
+### Added
+
+- **`zetryn/panel/`** (M14) — `PanelNode` + `PanelDecisionNode`: run multiple
+  specialist sub-graphs (parallel or sequential) and merge their verdicts via
+  a user-supplied aggregator. `scratch["_panel"]` channel for cross-specialist
+  coordination, `scratch["_panel_failures"]` graceful failure recording,
+  opt-in `required=[...]` / `short_circuit_on=...` escape hatches, and a
+  `single_llm_specialist()` helper. Orchestration stays deterministic Python —
+  no LLM-as-orchestrator (that variant is deferred to v3.0.0).
+- **`zetryn/analytics/`** — `CalibrationMap.fit(records)` maps raw confidence
+  scores to empirical win rates (histogram bins + shrinkage toward the global
+  rate; per-source bins with sparse-data fallback). JSON-safe
+  `to_dict()`/`from_dict()`; `report()` exposes per-bin stats. See
+  [docs/plans/2026-07-11-confidence-calibration.md](docs/plans/2026-07-11-confidence-calibration.md).
+- **`build_scanner(..., calibration=)`** — with a fitted map,
+  `Decision.confidence` becomes the empirical win rate for scores like the
+  analyst's `final_score` (per token source when data allows); the raw score
+  stays in `scores["final"]`, the calibrated copy lands in
+  `scores["calibrated"]`, `flags["calibrated"]` marks it.
+- **`strategies/backtest.py` replay bridge** — `ClosedTrade` export shape,
+  `fit_calibration(trades)`, `replay_dataset(trades)` (re-run the current
+  graph over entry-time snapshots vs realized outcomes), and
+  `closed_trade_metrics(trades)` (win-rate/PnL by source and confidence band).
+
+### Fixed
+
+- **`market_gate` division-by-zero** — `min_liquidity_usd=0` /
+  `min_volume_1h=0` crashed the score normalisation; zero now means
+  "no floor" and callers no longer need a 1.0 workaround.
+- **CSV env keys** — `ProviderConfig.resolve_keys` now splits
+  `KEY=k1,k2,k3` into individual `KeyPool` entries instead of sending the
+  whole CSV as one invalid Bearer token (silent 401 → rule-only fallback).
+- **Dead threshold config** — `ScannerConfig.alert_threshold` /
+  `watch_threshold` are now actually used: injected into the analyst system
+  prompt (with `smart_money_threshold` and `min_buy_ratio_5m`) and enforced
+  by new `finalize` guardrails that demote a recommendation whose
+  `final_score` doesn't back it (alert→watch→skip cascade).
+
 ## [1.1.0] — 2026-06-28
 
 **Wheel now ships reference implementations.** From this release the

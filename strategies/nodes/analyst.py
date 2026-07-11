@@ -24,7 +24,7 @@ from zetryn.core import State
 from zetryn.knowledge import KnowledgePack
 from zetryn.llm import Message, system, user
 
-_SYSTEM_PROMPT = """You are a senior Solana memecoin analyst working inside an
+_SYSTEM_PROMPT_TEMPLATE = """You are a senior Solana memecoin analyst working inside an
 automated trading agent. For each token you receive a structured fact sheet
 (market data, on-chain activity, wallet intelligence, social signals, optionally
 pump.fun bonding curve). Your job is to produce a JSON verdict matching the
@@ -52,16 +52,30 @@ present. Penalise dropping growth or bearish sentiment.
 SYNTHESIS: Combine the four aspects. Memecoins are noisy — be skeptical by
 default. Use these guidelines:
 - recommendation="alert" only when multiple aspects are positive AND there are
-  no major red flags. Final score >= 0.7.
-- recommendation="watch" when interesting but not yet conviction (0.4–0.7).
-- recommendation="skip" when uninteresting, dead, or risky (< 0.4).
-- If smart_wallet_buys >= 3 AND no safety concerns, lean toward alert even if
+  no major red flags. Final score >= {alert_threshold}.
+- recommendation="watch" when interesting but not yet conviction ({watch_threshold}–{alert_threshold}).
+- recommendation="skip" when uninteresting, dead, or risky (< {watch_threshold}).
+- If smart_wallet_buys >= {smart_money_threshold} AND no safety concerns, lean toward alert even if
   social/narrative are weak — smart money is informed.
-- If buy_ratio_5m < 0.4 with meaningful trade count, treat as sell pressure.
+- If buy_ratio_5m < {min_buy_ratio_5m} with meaningful trade count, treat as sell pressure.
 
 Return strictly the JSON schema. Each aspect needs a score, verdict, signals
 list (short phrases naming concrete observations), and one-sentence reasoning.
 The final reasoning field is your synthesis explaining the recommendation."""
+
+
+def _system_prompt(cfg) -> str:
+    """Render the analyst system prompt with the deployment's thresholds.
+
+    The decision bands (alert/watch/skip) and heuristic floors come from
+    ``ScannerConfig`` so a bot can tune them without forking the prompt text.
+    """
+    return _SYSTEM_PROMPT_TEMPLATE.format(
+        alert_threshold=cfg.alert_threshold,
+        watch_threshold=cfg.watch_threshold,
+        smart_money_threshold=cfg.smart_money_threshold,
+        min_buy_ratio_5m=cfg.min_buy_ratio_5m,
+    )
 
 
 def analyst_prompt(state: State) -> list[Message]:
@@ -118,7 +132,10 @@ def analyst_prompt(state: State) -> list[Message]:
             f"  mayhem_mode={p.is_mayhem_mode}",
         ]
 
-    return [system(_SYSTEM_PROMPT), user("Token fact sheet:\n" + "\n".join(facts))]
+    return [
+        system(_system_prompt(state.context.config)),
+        user("Token fact sheet:\n" + "\n".join(facts)),
+    ]
 
 
 _LESSONS_HEADER = (

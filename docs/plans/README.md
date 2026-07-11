@@ -24,3 +24,5 @@ any new strategy.
 | 2026-06-27 | [S6 — Early-Stage Dip Buy](2026-06-27-early-stage-dip-buy.md) | Shipped (v0.15.0) |
 | 2026-06-27 | [A1 — Organic Growth Detector](2026-06-27-organic-growth-detector.md) | Shipped (v0.16.0) |
 | 2026-06-27 | [M13 — YAML Loader](2026-06-27-yaml-loader-m13.md) | Shipped (v0.17.0) |
+| 2026-06-27 | [M14 — Multi-Agent Panel](2026-06-27-multi-agent-panel-m14.md) | Shipped (v1.2.0, merged from `feat/dev/multi-agent-panel`) |
+| 2026-07-11 | [Confidence Calibration + Replay Bridge](2026-07-11-confidence-calibration.md) | Shipped (v1.2.0) |

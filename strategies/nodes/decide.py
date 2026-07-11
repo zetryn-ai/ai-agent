@@ -14,7 +14,10 @@ In the M8 AI-first scanner the LLM analyst owns scoring and recommendation.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from trading.schemas import Decision, FullAnalysis
+from zetryn.analytics import CalibrationMap
 from zetryn.core import State
 
 
@@ -88,13 +91,50 @@ def _apply_guardrails(
             f"guardrail: buy ratio {a.buy_ratio_5m:.2f} below floor, demoted to watch"
         )
 
+    # 4) Score/recommendation consistency: the recommendation must be backed
+    #    by its own final_score per the configured bands. Cascades: an alert
+    #    scored below the watch floor falls all the way to skip.
+    if rec == "alert" and analysis.final_score < cfg.alert_threshold:
+        rec = "watch"
+        messages.append(
+            f"guardrail: final score {analysis.final_score:.2f} below alert "
+            f"threshold {cfg.alert_threshold:.2f}, demoted to watch"
+        )
+    if rec == "watch" and analysis.final_score < cfg.watch_threshold:
+        rec = "skip"
+        messages.append(
+            f"guardrail: final score {analysis.final_score:.2f} below watch "
+            f"threshold {cfg.watch_threshold:.2f}, demoted to skip"
+        )
+
     if rec == analysis.recommendation:
         return analysis, messages
     return analysis.model_copy(update={"recommendation": rec}), messages
 
 
+def make_finalize(
+    calibration: CalibrationMap | None = None,
+) -> Callable[[State], None]:
+    """Build a ``finalize`` node, optionally calibrating confidence.
+
+    With a fitted :class:`CalibrationMap`, ``Decision.confidence`` becomes the
+    empirical win rate observed for scores like the analyst's ``final_score``
+    (per token source when that source has enough outcome data). The raw score
+    stays available in ``scores["final"]``.
+    """
+
+    def fn(state: State) -> None:
+        _finalize(state, calibration)
+
+    return fn
+
+
 def finalize(state: State) -> None:
     """Convert the analyst's ``FullAnalysis`` into the final ``Decision``."""
+    _finalize(state, None)
+
+
+def _finalize(state: State, calibration: CalibrationMap | None) -> None:
     analysis: FullAnalysis | None = state.scratch.get("analysis")
     llm_failed = state.scratch.get("analysis__llm_failed", False)
 
@@ -132,15 +172,27 @@ def finalize(state: State) -> None:
         "final": round(guarded.final_score, 4),
     }
 
+    confidence = round(guarded.final_score, 4)
+    calibrated = calibration is not None and calibration.total > 0
+    if calibrated:
+        confidence = round(
+            calibration.calibrate(
+                guarded.final_score, source=state.context.token.source
+            ),
+            4,
+        )
+        scores["calibrated"] = confidence
+
     state.output = Decision(
         action=guarded.recommendation,
-        confidence=round(guarded.final_score, 4),
+        confidence=confidence,
         scores=scores,
         reasons=reasons,
         flags={
             "rug_risk": False,
             "llm_failed": bool(llm_failed),
             "guardrail_applied": bool(guard_msgs),
+            "calibrated": calibrated,
         },
         meta={"run_id": state.run_id, "latency_ms": _latency_ms(state)},
         analysis=guarded,

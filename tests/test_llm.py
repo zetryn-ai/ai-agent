@@ -61,6 +61,19 @@ def test_resolve_keys_collects_present():
     assert keys == ["1", "3"]
 
 
+def test_resolve_keys_splits_csv_env_into_pool_entries():
+    """GROQ_API_KEY=k1,k2,k3 must become three pool keys, not one Bearer token."""
+    cfg = ProviderConfig("groq", "http://x", "m", key_envs=["GROQ_API_KEY"])
+    keys = cfg.resolve_keys(environ={"GROQ_API_KEY": "k1, k2 ,k3,"})
+    assert keys == ["k1", "k2", "k3"]
+
+
+def test_resolve_keys_csv_mixes_with_plain_envs():
+    cfg = ProviderConfig("groq", "http://x", "m", key_envs=["A", "B"])
+    keys = cfg.resolve_keys(environ={"A": "k1,k2", "B": "k3"})
+    assert keys == ["k1", "k2", "k3"]
+
+
 # -- OpenAICompatibleClient with MockTransport -------------------------------
 
 

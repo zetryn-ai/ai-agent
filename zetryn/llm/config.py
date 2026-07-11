@@ -31,11 +31,22 @@ class ProviderConfig:
     supports_json_mode: bool = True
 
     def resolve_keys(self, *, environ: dict[str, str] | None = None) -> list[str]:
-        """Resolve keys. Literal ``keys`` win (testing); else read ``key_envs`` from env."""
+        """Resolve keys. Literal ``keys`` win (testing); else read ``key_envs`` from env.
+
+        An env var may hold a comma-separated list (``KEY=k1,k2,k3``) — each
+        entry becomes its own pool key. Real API keys never contain commas, so
+        splitting is safe; without it the CSV would be sent as one invalid
+        Bearer token and fail with a silent 401.
+        """
         if self.keys:
             return list(self.keys)
         env = environ if environ is not None else os.environ
-        keys = [env[name] for name in self.key_envs if env.get(name)]
+        keys = [
+            k.strip()
+            for name in self.key_envs
+            for k in (env.get(name) or "").split(",")
+            if k.strip()
+        ]
         if not keys:
             raise LLMError(
                 f"provider {self.name!r}: none of {self.key_envs} are set in the "

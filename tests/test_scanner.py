@@ -158,3 +158,46 @@ async def test_sample_provider_pull_matches_push():
     g = build_scanner(_FakeLLM(final=0.85, rec="alert"))
     state = await g.run(State(context=TradingContext(token=token)))
     assert state.output.action == "alert"
+
+
+def test_market_gate_zero_thresholds_do_not_crash():
+    """min_liquidity_usd=0 / min_volume_1h=0 means 'no floor' — not a crash.
+
+    Regression: the score normalisation divided by (threshold * 5), so a zero
+    threshold raised ZeroDivisionError and bots had to floor the config at 1.0.
+    """
+    from strategies.nodes.filters import market_gate
+
+    ctx = _ctx("GOOD", min_liquidity_usd=0, min_volume_1h=0)
+    state = State(context=ctx)
+    market_gate(state)  # must not raise
+    assert state.scratch["market_ok"] is True
+    # Any nonzero liquidity/volume over a zero floor saturates the score.
+    assert state.scratch["market_score"] == 1.0
+
+
+def test_analyst_prompt_uses_configured_thresholds():
+    """Decision bands in the system prompt come from ScannerConfig, not hardcode."""
+    from strategies.nodes.analyst import analyst_prompt
+
+    ctx = _ctx("GOOD", alert_threshold=0.8, watch_threshold=0.55)
+    sys_text = analyst_prompt(State(context=ctx))[0]["content"]
+    assert "0.8" in sys_text and "0.55" in sys_text
+    assert "0.7." not in sys_text  # old hardcoded alert band is gone
+
+
+async def test_guardrail_demotes_alert_scored_below_threshold():
+    """LLM says 'alert' but final_score is under alert_threshold → watch."""
+    g = build_scanner(_FakeLLM(final=0.6, rec="alert"))
+    state = await g.run(State(context=_ctx("GOOD")))
+    assert state.output.action == "watch"
+    assert state.output.flags["guardrail_applied"] is True
+    assert any("below alert threshold" in r for r in state.output.reasons)
+
+
+async def test_guardrail_cascades_alert_to_skip_below_watch_floor():
+    """An 'alert' scored under the watch floor falls all the way to skip."""
+    g = build_scanner(_FakeLLM(final=0.2, rec="alert"))
+    state = await g.run(State(context=_ctx("GOOD")))
+    assert state.output.action == "skip"
+    assert any("below watch threshold" in r for r in state.output.reasons)
