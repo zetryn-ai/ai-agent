@@ -5,6 +5,18 @@ All notable changes to `zetryn-trading` will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] — 2026-07-11
+
+**Price momentum inputs for the analyst.** Live paper-trading data (48 closed
+trades) showed the analyst approving "trending" tokens *after* their pump —
+a snapshot price cannot express direction. `MarketData` gains
+`price_change_5m_pct` / `price_change_1h_pct` / `price_change_6h_pct`
+(default 0.0 = no history), the analyst fact sheet prints them, and the
+MARKET rubric explicitly teaches the late-entry pattern: big 1h/6h gain with
+flat 5m = you are exit liquidity; rising 5m on a modest base = early
+momentum. Backwards compatible — producers that don't set the fields get
+the old behaviour.
+
 ## [1.2.0] — 2026-07-11
 
 **M14 Multi-Agent Panel merged + confidence calibration layer.** The

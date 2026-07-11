@@ -39,6 +39,11 @@ disqualifying. Burned/locked LP is a plus.
 MARKET: Is there real liquidity and volume to support entry and exit? Compare
 liquidity_usd, volume_1h, recent activity (volume_5m, txns). Penalise dead
 tokens (low activity despite age) and trap tokens (huge social but no liquidity).
+Use price_change (5m/1h/6h) to judge WHERE in the move you are: a large
+positive 1h/6h change with flat-or-negative 5m means the pump already happened
+and you would be exit liquidity — penalise it. Rising 5m on top of a modest
+1h base is early momentum — reward it. All-zero price_change means no history
+(fresh launch), not flat price.
 
 WALLETS: Who is actually buying? Smart wallet buys (proven profitable wallets) are
 the strongest positive signal in memecoin trading. KOL buys matter. High sniper
@@ -93,6 +98,8 @@ def analyst_prompt(state: State) -> list[Message]:
         "MARKET",
         f"  mcap=${m.mcap:,.0f}  liquidity=${m.liquidity_usd:,.0f}  "
         f"vol_1h=${m.volume_1h:,.0f}  txns_1h={m.txns_1h}  price={m.price}",
+        f"  price_change: 5m={m.price_change_5m_pct:+.1f}%  1h={m.price_change_1h_pct:+.1f}%  "
+        f"6h={m.price_change_6h_pct:+.1f}%  (0.0 = no history yet)",
         "",
         "ACTIVITY (last 5m)",
         f"  vol_1m=${a.volume_1m_usd:,.0f}  vol_5m=${a.volume_5m_usd:,.0f}",

@@ -29,6 +29,14 @@ class MarketData(BaseModel):
     volume_1h: float = 0.0
     volume_24h: float = 0.0
     price: float | None = None
+    # Price momentum (percent change over the window). A snapshot price cannot
+    # tell the analyst whether momentum is rising or already peaked — trending
+    # sources by construction surface tokens AFTER they pumped, and treating
+    # those as fresh momentum was a measured loss pattern in live paper data.
+    # 0.0 = unknown/not provided (fresh launches have no history yet).
+    price_change_5m_pct: float = 0.0
+    price_change_1h_pct: float = 0.0
+    price_change_6h_pct: float = 0.0
     # ``age_minutes`` is kept for backwards compat; prefer ``age_seconds`` for
     # sub-minute precision on fresh pumpfun launches.
     age_minutes: float | None = None
