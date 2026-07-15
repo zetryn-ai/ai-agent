@@ -86,7 +86,12 @@ def _system_prompt(cfg) -> str:
 def analyst_prompt(state: State) -> list[Message]:
     t = state.context.token
     m, h, c, a, w, s = (
-        t.market, t.holders, t.contract, t.activity, t.wallets, t.social
+        t.market,
+        t.holders,
+        t.contract,
+        t.activity,
+        t.wallets,
+        t.social,
     )
     tw = s.twitter
 

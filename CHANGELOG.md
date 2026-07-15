@@ -5,6 +5,30 @@ All notable changes to `zetryn-trading` will be documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
 the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] — 2026-07-15
+
+**Sniper v2 — weighted rules engine** (replaces the binary v1 gates when
+``SniperConfig.use_scoring`` is on; v1 path unchanged for compat).
+
+### Added
+
+- ``sniper_score`` node: 15-component weighted score (liquidity/mcap/FDV
+  bands, top10 distribution, 1m volume, buy ratio, smart-money/KOL/whale/
+  bundler wallet intel, safety score, pump.fun curve velocity, socials,
+  serial-deployer flag) → **auto-buy ≥90 / small-buy ≥75 / watch ≥60 /
+  reject**, confidence = score/100, size tiered + concentration-penalized.
+  Bonuses clamp to 100 BEFORE penalties apply — red flags always bite.
+  Hard rejects independent of score: taxes > cap, bundlers > cap.
+- ``SniperConfig`` v2 knobs: liquidity/mcap/FDV bands, ``min_volume_1m``,
+  ``min_buy_ratio``, ``max_tax_pct``, ``min_curve_velocity_sol_per_min``,
+  score thresholds, ``use_scoring`` switch.
+- Schema: ``MarketData.fdv``; ``ContractData.buy_tax_pct/sell_tax_pct``;
+  ``PumpfunData`` curve_sol / curve_velocity_sol_per_min / has_website /
+  has_twitter / has_telegram / creator_coin_count.
+- Lifecycle **stagnation exit**: ``stagnation_after_s`` /
+  ``stagnation_max_pnl_pct`` — a position flat past the window exits
+  (frees the slot); wired between time_stop and trailing_stop in all modes.
+
 ## [1.3.0] — 2026-07-11
 
 **Price momentum inputs for the analyst.** Live paper-trading data (48 closed

@@ -43,8 +43,9 @@ def _latency_ms(state: State) -> float:
     return round(sum(t.duration_ms for t in state.trace), 4)
 
 
-def _abort(state: State, reason: str, *, action: str = "skip",
-           rug_risk: bool = False) -> Command:
+def _abort(
+    state: State, reason: str, *, action: str = "skip", rug_risk: bool = False
+) -> Command:
     state.output = Decision(
         action=action,
         confidence=0.0,
@@ -170,22 +171,31 @@ def fast_market(state: State) -> Command | None:
     cfg = state.context.config
 
     if m.liquidity_usd < cfg.min_liquidity_usd:
-        return _abort(state, f"liquidity ${m.liquidity_usd:,.0f} below min "
-                             f"${cfg.min_liquidity_usd:,.0f}")
+        return _abort(
+            state,
+            f"liquidity ${m.liquidity_usd:,.0f} below min "
+            f"${cfg.min_liquidity_usd:,.0f}",
+        )
     if m.volume_1h < cfg.min_volume_1h:
-        return _abort(state, f"volume_1h ${m.volume_1h:,.0f} below min "
-                             f"${cfg.min_volume_1h:,.0f}")
+        return _abort(
+            state, f"volume_1h ${m.volume_1h:,.0f} below min ${cfg.min_volume_1h:,.0f}"
+        )
 
     h = state.context.token.holders
     if h.top10_pct > cfg.max_top10_pct:
-        return _abort(state, f"top10_pct {h.top10_pct:.0%} above max "
-                             f"{cfg.max_top10_pct:.0%}")
+        return _abort(
+            state, f"top10_pct {h.top10_pct:.0%} above max {cfg.max_top10_pct:.0%}"
+        )
     if w.bundler_wallet_count > cfg.max_bundler_count:
-        return _abort(state, f"bundler_count {w.bundler_wallet_count} above max "
-                             f"{cfg.max_bundler_count}")
+        return _abort(
+            state,
+            f"bundler_count {w.bundler_wallet_count} above max {cfg.max_bundler_count}",
+        )
     if w.sniper_wallet_count > cfg.max_sniper_count:
-        return _abort(state, f"sniper_count {w.sniper_wallet_count} above max "
-                             f"{cfg.max_sniper_count}")
+        return _abort(
+            state,
+            f"sniper_count {w.sniper_wallet_count} above max {cfg.max_sniper_count}",
+        )
     return None
 
 
@@ -223,10 +233,15 @@ def kol_analyst_prompt(state: State) -> list[Message]:
     ctx = state.context
     ev = ctx.event
     t = ctx.token
-    profile = state.scratch["kol_profile"]   # set by kol_quality
+    profile = state.scratch["kol_profile"]  # set by kol_quality
 
     m, h, c, a, w, s = (
-        t.market, t.holders, t.contract, t.activity, t.wallets, t.social
+        t.market,
+        t.holders,
+        t.contract,
+        t.activity,
+        t.wallets,
+        t.social,
     )
     tw = s.twitter
     facts: list[str] = [
@@ -344,7 +359,7 @@ def sizing(state: State) -> None:
     """
     cfg = state.context.config
     h = state.context.token.holders
-    profile = state.scratch["kol_profile"]   # set by kol_quality
+    profile = state.scratch["kol_profile"]  # set by kol_quality
 
     floor, ceiling = cfg.kol_confidence_floor, cfg.kol_confidence_ceiling
     raw = (profile.hit_rate - floor) / max(ceiling - floor, 1e-9)
@@ -381,7 +396,9 @@ def sizing(state: State) -> None:
     size = max(0.0, min(rule_size * size_mult, cfg.max_size))
 
     base_conf = 0.5 + 0.5 * kol_conf
-    confidence = base_conf if verdict is None else round((base_conf + verdict.confidence) / 2, 3)
+    confidence = (
+        base_conf if verdict is None else round((base_conf + verdict.confidence) / 2, 3)
+    )
 
     reasons = [
         f"KOL {profile.name or 'unknown'} (tier {profile.tier}, "
@@ -424,11 +441,16 @@ def kol_audit_prompt(state: State) -> list[Message]:
     ctx = state.context
     ev = ctx.event
     t = ctx.token
-    profile = state.scratch["kol_profile"]   # set by kol_quality
+    profile = state.scratch["kol_profile"]  # set by kol_quality
     d: Decision = state.output
 
     m, h, c, a, w, s = (
-        t.market, t.holders, t.contract, t.activity, t.wallets, t.social
+        t.market,
+        t.holders,
+        t.contract,
+        t.activity,
+        t.wallets,
+        t.social,
     )
     tw = s.twitter
     facts: list[str] = [

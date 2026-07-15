@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field
 
 class MarketData(BaseModel):
     mcap: float = 0.0
+    fdv: float = 0.0  # fully-diluted valuation (0 = unknown)
     liquidity_usd: float = 0.0
     volume_1h: float = 0.0
     volume_24h: float = 0.0
@@ -76,6 +77,10 @@ class HolderData(BaseModel):
 class ContractData(BaseModel):
     mint_authority_active: bool = False
     freeze_authority_active: bool = False
+    # Trading taxes in percent (0 = none/unknown). SPL tokens normally have
+    # none; tax-bearing programs are a red flag the sniper hard-rejects on.
+    buy_tax_pct: float = 0.0
+    sell_tax_pct: float = 0.0
     lp_burned: bool = False
     lp_locked: bool = False
     is_honeypot: bool = False
@@ -127,6 +132,13 @@ class PumpfunData(BaseModel):
     creator_sol_buy: float = 0.0  # SOL the creator invested at launch
     bonding_curve_pct: float = 0.0  # 0..100 graduation progress
     is_mayhem_mode: bool = False  # pumpfun turbo regime flag
+    # v1.4.0 sniper-v2 inputs (0/False = unknown, scored neutrally):
+    curve_sol: float = 0.0  # real SOL in the curve at decision time
+    curve_velocity_sol_per_min: float = 0.0  # SOL inflow rate since launch
+    has_website: bool = False
+    has_twitter: bool = False
+    has_telegram: bool = False
+    creator_coin_count: int = 0  # tokens this creator launched (0 = unknown)
 
 
 class TwitterData(BaseModel):
@@ -287,6 +299,24 @@ class SniperConfig(BaseModel):
     use_llm: bool = False  # decide/hybrid mode; off = pure-rule fast path
     decision_mode: str = "rule"  # "rule" | "llm" | "hybrid"
 
+    # -- v1.4.0 sniper-v2 rules engine (weighted scoring; see sniper_score) --
+    # Bands: 0 disables an upper bound. Values in USD.
+    max_liquidity_usd: float = 0.0  # above this = late entry
+    min_mcap_usd: float = 0.0
+    max_mcap_usd: float = 0.0
+    max_fdv_usd: float = 0.0
+    min_volume_1m: float = 0.0  # 1-minute volume floor (age-appropriate)
+    min_buy_ratio: float = 0.0  # buys/(buys+sells) 5m floor (0 = off)
+    max_bundler_wallets: int = 3
+    max_tax_pct: float = 5.0  # buy OR sell tax above this = hard reject
+    min_curve_velocity_sol_per_min: float = 0.0  # pumpfun demand floor
+    # Score thresholds (0-100). score >= auto_buy -> full-size buy;
+    # >= small_buy -> half-size; >= watch -> watch; else skip.
+    score_auto_buy: float = 90.0
+    score_small_buy: float = 75.0
+    score_watch: float = 60.0
+    use_scoring: bool = False  # off = legacy v1 rule path (compat)
+
 
 # -- context (input wrapper) and output --------------------------------------
 
@@ -304,15 +334,24 @@ class Decision(BaseModel):
     """The framework's output. The bot executes (or not) based on this."""
 
     action: Literal[
-        "alert", "watch", "skip", "buy", "abort",
+        "alert",
+        "watch",
+        "skip",
+        "buy",
+        "abort",
         # Position-management actions (v0.13.0 / PL1)
-        "hold", "take_profit", "scale_out", "exit_full",
+        "hold",
+        "take_profit",
+        "scale_out",
+        "exit_full",
     ]
     confidence: float = Field(ge=0, le=1, default=0.0)
     size: float | None = None
     scores: dict[str, float] = Field(default_factory=dict)  # safety/market/social/...
     reasons: list[str] = Field(default_factory=list)
-    flags: dict[str, Any] = Field(default_factory=dict)  # rug_risk, llm_failed, classification
+    flags: dict[str, Any] = Field(
+        default_factory=dict
+    )  # rug_risk, llm_failed, classification
     meta: dict[str, Any] = Field(default_factory=dict)  # run_id, latency_ms
     # Full analyst verdict (M8+). Populated by AI-first scanners; None for
     # hard-gate rejects and legacy/rule-only paths.
@@ -342,13 +381,15 @@ class KOLAnalystVerdict(BaseModel):
         "concerns the rule layer cannot encode)."
     )
     size_multiplier: float = Field(
-        ge=0.0, le=1.5,
+        ge=0.0,
+        le=1.5,
         description="Multiplier applied to the rule-derived size. 1.0 = full "
         "rule size. 0.5 = half (less confident). 1.5 = ceiling boost (strong "
         "confluence). Ignored when approve=False.",
     )
     confidence: float = Field(
-        ge=0.0, le=1.0,
+        ge=0.0,
+        le=1.0,
         description="How confident the analyst is in the verdict (independent "
         "of approve direction).",
     )
@@ -372,13 +413,13 @@ class KOLProfile(BaseModel):
     these values to score / reject incoming copy-trade signals.
     """
 
-    name: str = ""                              # human-friendly label
+    name: str = ""  # human-friendly label
     hit_rate: float = Field(ge=0, le=1, default=0.0)
     avg_pnl_pct: float = 0.0
     trades_30d: int = 0
-    exit_pattern: str = ""                      # e.g. "scales_out_50pct"
+    exit_pattern: str = ""  # e.g. "scales_out_50pct"
     tier: Literal["S", "A", "B", "C"] = "C"
-    min_sol_to_copy: float = 0.0                # ignore KOL buys below this size
+    min_sol_to_copy: float = 0.0  # ignore KOL buys below this size
 
 
 class KOLBuyEvent(BaseModel):
@@ -391,8 +432,8 @@ class KOLBuyEvent(BaseModel):
     wallet: str
     mint: str
     sol_amount: float = Field(ge=0)
-    detected_at_ts: float                       # unix ts (bot's clock)
-    block_age_seconds: float = Field(ge=0)      # how stale this signal is
+    detected_at_ts: float  # unix ts (bot's clock)
+    block_age_seconds: float = Field(ge=0)  # how stale this signal is
 
 
 class KOLCopyTradeConfig(BaseModel):
@@ -413,15 +454,15 @@ class KOLCopyTradeConfig(BaseModel):
     # KOL whitelist gates
     min_kol_tier: Literal["S", "A", "B", "C"] = "A"
     min_kol_hit_rate: float = Field(ge=0, le=1, default=0.40)
-    max_signal_age_seconds: float = 30.0        # reject if signal is too stale
-    kol_cooldown_seconds: float = 60.0          # min gap between copies of same KOL
+    max_signal_age_seconds: float = 30.0  # reject if signal is too stale
+    kol_cooldown_seconds: float = 60.0  # min gap between copies of same KOL
 
     # sizing formula tunables (sizing = base × (1 + 2·kol_conf) × token_safety)
     base_size: float = 1.0
     max_size: float = 5.0
-    kol_confidence_floor: float = 0.40          # hit_rate below this → conf=0
-    kol_confidence_ceiling: float = 0.70        # hit_rate at/above this → conf=0.30
-    top10_penalty_start: float = 0.20           # penalise size when top10 > this
+    kol_confidence_floor: float = 0.40  # hit_rate below this → conf=0
+    kol_confidence_ceiling: float = 0.70  # hit_rate at/above this → conf=0.30
+    top10_penalty_start: float = 0.20  # penalise size when top10 > this
 
     decision_mode: Literal["rule", "confirmed", "audit"] = "rule"
 
@@ -541,8 +582,8 @@ class PositionState(BaseModel):
     entry_ts: float
 
     current_price: float
-    current_size: float       # what's left after any partial exits
-    pnl_pct: float            # (current - entry) / entry — signed
+    current_size: float  # what's left after any partial exits
+    pnl_pct: float  # (current - entry) / entry — signed
     holding_seconds: float
 
     peak_pnl_pct: float = 0.0
@@ -569,6 +610,11 @@ class LifecycleConfig(BaseModel):
         default_factory=lambda: [(0.5, 0.5), (1.0, 0.5), (3.0, 1.0)]
     )
 
+    # Stagnation exit (v1.4.0): a position that has gone nowhere after this
+    # long is dead capital — free the slot. 0 disables.
+    stagnation_after_s: float = 0.0
+    stagnation_max_pnl_pct: float = 0.05  # |pnl| below this counts as "nowhere"
+
     # Safety
     min_sell_size: float = 0.0
 
@@ -591,7 +637,9 @@ class LifecycleVerdict(BaseModel):
     """
 
     action: Literal["hold", "take_profit", "scale_out", "exit_full"]
-    size_pct: float = Field(ge=0, le=1, description="fraction of CURRENT position to sell")
+    size_pct: float = Field(
+        ge=0, le=1, description="fraction of CURRENT position to sell"
+    )
     confidence: float = Field(ge=0, le=1)
     reasoning: str = ""
     concerns: list[str] = Field(default_factory=list)
@@ -721,22 +769,28 @@ class DipBuySnapshot(BaseModel):
         description="(current_price / post_event_ath) - 1. Negative means dipped below ATH.",
     )
     sell_pressure_score: float = Field(
-        ge=0, le=1,
+        ge=0,
+        le=1,
         description="Bot-computed: 0=no selling, 1=extreme selling.",
     )
 
     # Recovery signals
     buy_ratio_5m: float = Field(ge=0, le=1, default=0.5)
     holder_retention_pct: float = Field(
-        ge=0, le=1, default=0.0,
+        ge=0,
+        le=1,
+        default=0.0,
         description="Fraction of holders that stayed through the dump.",
     )
     unique_buyers_trend: float = Field(
-        ge=-1, le=1, default=0.0,
+        ge=-1,
+        le=1,
+        default=0.0,
         description="Positive=unique buyers rising, negative=falling.",
     )
     price_stable_seconds: float = Field(
-        ge=0, default=0.0,
+        ge=0,
+        default=0.0,
         description="How long price has not made a new low.",
     )
 
@@ -749,11 +803,12 @@ class DipBuyConfig(BaseModel):
 
     # Timing window (seconds since the triggering event)
     min_time_since_event_seconds: float = 60.0
-    max_time_since_event_seconds: float = 600.0   # ~10 min for launch; set 1800 for grad
+    max_time_since_event_seconds: float = 600.0  # ~10 min for launch; set 1800 for grad
 
     # Dip gate
     min_dip_pct: float = Field(
-        ge=0, default=0.15,
+        ge=0,
+        default=0.15,
         description="Minimum drop from post-event ATH required (e.g. 0.15 = must be ≥15% below ATH).",
     )
     max_sell_pressure_score: float = Field(ge=0, le=1, default=0.35)
@@ -823,35 +878,44 @@ class GrowthSnapshot(BaseModel):
 
     # Sell presence — key manipulation tell
     sell_presence_pct: float = Field(
-        ge=0, le=1,
+        ge=0,
+        le=1,
         description="Fraction of candles with meaningful sell volume. "
         "Near-zero = zero-sell coordinated pump.",
     )
 
     # Buyer dynamics
     unique_buyer_trend: float = Field(
-        ge=-1, le=1, default=0.0,
+        ge=-1,
+        le=1,
+        default=0.0,
         description="Positive = new unique buyers joining over the window.",
     )
     holder_growth_rate: float = Field(
-        ge=0, default=0.0,
+        ge=0,
+        default=0.0,
         description="New holders per minute over the observation window.",
     )
 
     # Pullback pattern
     has_healthy_pullback: bool = False
     max_drawdown_pct: float = Field(
-        ge=0, le=1, default=0.0,
+        ge=0,
+        le=1,
+        default=0.0,
         description="Worst intra-window pullback. Organic = 0.05–0.25.",
     )
 
     # Volume pattern
     whale_volume_pct: float = Field(
-        ge=0, le=1, default=0.0,
+        ge=0,
+        le=1,
+        default=0.0,
         description="Fraction of volume from whale wallets.",
     )
     volume_acceleration: float = Field(
-        ge=0, default=1.0,
+        ge=0,
+        default=1.0,
         description="recent_volume / early_volume. > 1.5 = accelerating demand.",
     )
 

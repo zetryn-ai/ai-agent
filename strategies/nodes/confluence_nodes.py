@@ -161,8 +161,7 @@ def market_gate(state: State) -> Command | None:
     if cfg.min_volume_1h > 0 and m.volume_1h < cfg.min_volume_1h:
         return _abort(
             state,
-            f"volume_1h ${m.volume_1h:,.0f} below min "
-            f"${cfg.min_volume_1h:,.0f}",
+            f"volume_1h ${m.volume_1h:,.0f} below min ${cfg.min_volume_1h:,.0f}",
         )
     if h.top10_pct > cfg.max_top10_pct:
         return _abort(
@@ -178,8 +177,7 @@ def market_gate(state: State) -> Command | None:
     if w.sniper_wallet_count > cfg.max_sniper_wallets:
         return _abort(
             state,
-            f"sniper_count {w.sniper_wallet_count} above max "
-            f"{cfg.max_sniper_wallets}",
+            f"sniper_count {w.sniper_wallet_count} above max {cfg.max_sniper_wallets}",
         )
     return None
 
@@ -217,7 +215,9 @@ def rule_size_and_buy(state: State) -> None:
     size = cfg.base_size * wallet_mult * quality_mult * top10_penalty
     size = max(0.0, min(size, cfg.max_size))
 
-    confidence = round(0.5 + 0.3 * (wallet_mult - 1.0) + 0.2 * (quality_mult - 0.6) / 0.4, 3)
+    confidence = round(
+        0.5 + 0.3 * (wallet_mult - 1.0) + 0.2 * (quality_mult - 0.6) / 0.4, 3
+    )
     confidence = max(0.0, min(confidence, 1.0))
 
     state.output = Decision(
@@ -268,13 +268,9 @@ def _confluence_facts(state: State) -> str:
     )
     unique_count: int = state.scratch.get("unique_wallet_count", len(profiles))
     avg_hit_rate = (
-        sum(p.hit_rate for p in profiles.values()) / len(profiles)
-        if profiles else 0.0
+        sum(p.hit_rate for p in profiles.values()) / len(profiles) if profiles else 0.0
     )
-    total_sol = sum(
-        a.sol_amount for a in ev.accumulations
-        if a.wallet in profiles
-    )
+    total_sol = sum(a.sol_amount for a in ev.accumulations if a.wallet in profiles)
     tier_dist = {}
     for p in profiles.values():
         tier_dist[p.tier] = tier_dist.get(p.tier, 0) + 1
@@ -283,7 +279,7 @@ def _confluence_facts(state: State) -> str:
         f"TOKEN: {t.symbol or t.mint[:8]} ({t.name})\n"
         f"CONFLUENCE:\n"
         f"  qualifying_wallets={unique_count} total_sol={total_sol:.1f} "
-        f"window={ev.window_seconds/3600:.1f}h\n"
+        f"window={ev.window_seconds / 3600:.1f}h\n"
         f"  avg_hit_rate={avg_hit_rate:.2f} "
         f"tier_distribution={tier_dist}\n"
         f"MARKET: mcap=${m.mcap:,.0f} liq=${m.liquidity_usd:,.0f} "
@@ -387,8 +383,7 @@ def _audit_prompt(state: State) -> list[Message]:
         user(
             f"DECISION: action={d.action} size={d.size} "
             f"confidence={d.confidence}\n"
-            f"Reasons: {d.reasons}\n\n"
-            + _confluence_facts(state)
+            f"Reasons: {d.reasons}\n\n" + _confluence_facts(state)
         ),
     ]
 

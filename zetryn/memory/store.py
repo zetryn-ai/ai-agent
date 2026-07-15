@@ -20,7 +20,9 @@ class MemoryStore(Protocol):
     """Namespaced key-value store."""
 
     async def get(self, ns: str, key: str) -> Any | None: ...
-    async def put(self, ns: str, key: str, value: Any, *, ttl: float | None = None) -> None: ...
+    async def put(
+        self, ns: str, key: str, value: Any, *, ttl: float | None = None
+    ) -> None: ...
     async def delete(self, ns: str, key: str) -> None: ...
     async def query(self, ns: str) -> list[Any]: ...
 
@@ -42,7 +44,9 @@ class InMemoryStore:
             return None
         return entry["value"]
 
-    async def put(self, ns: str, key: str, value: Any, *, ttl: float | None = None) -> None:
+    async def put(
+        self, ns: str, key: str, value: Any, *, ttl: float | None = None
+    ) -> None:
         exp = time.time() + ttl if ttl is not None else None
         self._data.setdefault(ns, {})[key] = {"value": value, "exp": exp}
 
@@ -77,7 +81,9 @@ class JSONFileStore:
             return None
         return entry["value"]
 
-    async def put(self, ns: str, key: str, value: Any, *, ttl: float | None = None) -> None:
+    async def put(
+        self, ns: str, key: str, value: Any, *, ttl: float | None = None
+    ) -> None:
         exp = time.time() + ttl if ttl is not None else None
         self._data.setdefault(ns, {})[key] = {"value": value, "exp": exp}
         self._flush()

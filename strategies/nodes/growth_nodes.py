@@ -155,21 +155,21 @@ def organic_classify(state: State) -> Command:
 
     dim_trajectory = snap.price_trajectory in _TRAJECTORY_ORGANIC
     dim_sells = (
-        cfg.min_sell_presence_pct
-        <= snap.sell_presence_pct
-        <= cfg.max_sell_presence_pct
+        cfg.min_sell_presence_pct <= snap.sell_presence_pct <= cfg.max_sell_presence_pct
     )
     dim_buyers = snap.unique_buyer_trend >= cfg.min_unique_buyer_trend
     dim_pullback = snap.has_healthy_pullback
     dim_whale = snap.whale_volume_pct <= cfg.max_whale_volume_pct
 
-    organic_score = sum([
-        0.2 if dim_trajectory else 0.0,
-        0.2 if dim_sells else 0.0,
-        0.2 if dim_buyers else 0.0,
-        0.2 if dim_pullback else 0.0,
-        0.2 if dim_whale else 0.0,
-    ])
+    organic_score = sum(
+        [
+            0.2 if dim_trajectory else 0.0,
+            0.2 if dim_sells else 0.0,
+            0.2 if dim_buyers else 0.0,
+            0.2 if dim_pullback else 0.0,
+            0.2 if dim_whale else 0.0,
+        ]
+    )
 
     # Build signal list for auditability
     signals: list[str] = []
@@ -197,15 +197,21 @@ def organic_classify(state: State) -> Command:
     if organic_score >= cfg.organic_score_threshold:
         classification = "organic"
         action = "buy"
-        confidence = 0.5 + 0.5 * (organic_score - cfg.organic_score_threshold) / (1.0 - cfg.organic_score_threshold + 1e-9)
+        confidence = 0.5 + 0.5 * (organic_score - cfg.organic_score_threshold) / (
+            1.0 - cfg.organic_score_threshold + 1e-9
+        )
     elif organic_score >= cfg.suspicious_score_threshold:
         classification = "suspicious"
         action = "skip"
-        confidence = 0.4 + 0.3 * (organic_score - cfg.suspicious_score_threshold) / (cfg.organic_score_threshold - cfg.suspicious_score_threshold + 1e-9)
+        confidence = 0.4 + 0.3 * (organic_score - cfg.suspicious_score_threshold) / (
+            cfg.organic_score_threshold - cfg.suspicious_score_threshold + 1e-9
+        )
     else:
         classification = "manipulated"
         action = "abort"
-        confidence = 0.5 + 0.5 * (1.0 - organic_score / max(cfg.suspicious_score_threshold, 1e-9))
+        confidence = 0.5 + 0.5 * (
+            1.0 - organic_score / max(cfg.suspicious_score_threshold, 1e-9)
+        )
 
     reasons = [
         f"organic_score={organic_score:.2f} → {classification}",
@@ -343,7 +349,11 @@ def growth_guardrail(decision: Decision | None, state: State) -> Decision:
             action="skip",
             confidence=0.0,
             reasons=["LLM unavailable; default suspicious"],
-            flags={"rug_risk": False, "llm_failed": True, "classification": "suspicious"},
+            flags={
+                "rug_risk": False,
+                "llm_failed": True,
+                "classification": "suspicious",
+            },
             meta={"run_id": state.run_id, "latency_ms": _latency_ms(state)},
         )
     if state.context.token.contract.is_dangerous:
@@ -382,8 +392,7 @@ def _audit_prompt(state: State) -> list[Message]:
             f"CLASSIFICATION: action={d.action} "
             f"classification={d.flags.get('classification')} "
             f"organic_score={d.scores.get('organic_score')}\n"
-            f"Reasons: {d.reasons}\n\n"
-            + _growth_facts(state)
+            f"Reasons: {d.reasons}\n\n" + _growth_facts(state)
         ),
     ]
 

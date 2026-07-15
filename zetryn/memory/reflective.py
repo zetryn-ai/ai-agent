@@ -116,13 +116,13 @@ def reflect(
     """Pure function: derive loss patterns from a list of decision records."""
     # Only consider records with a realised outcome.
     with_outcome = [
-        r for r in records if isinstance(r.get("outcome"), dict) and "pnl" in r["outcome"]
+        r
+        for r in records
+        if isinstance(r.get("outcome"), dict) and "pnl" in r["outcome"]
     ]
     losses = [r for r in with_outcome if r["outcome"]["pnl"] < loss_threshold]
 
-    avg_loss = (
-        statistics.mean(r["outcome"]["pnl"] for r in losses) if losses else None
-    )
+    avg_loss = statistics.mean(r["outcome"]["pnl"] for r in losses) if losses else None
 
     keys = feature_keys or _infer_feature_keys(with_outcome)
     patterns: list[Pattern] = []
@@ -135,12 +135,15 @@ def reflect(
         if numeric:
             pop = [float(v) for v in values_all]
 
-            def bucket_of(r: dict[str, Any], _k: str = key, _pop: list[float] = pop) -> str | None:
+            def bucket_of(
+                r: dict[str, Any], _k: str = key, _pop: list[float] = pop
+            ) -> str | None:
                 v = r.get(_k)
                 if v is None:
                     return None
                 return _quartile_label(_pop, float(v))
         else:
+
             def bucket_of(r: dict[str, Any], _k: str = key) -> str | None:
                 v = r.get(_k)
                 return None if v is None else str(v)

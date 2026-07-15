@@ -28,10 +28,18 @@ Condition = Callable[[State], bool]
 # Only these AST node classes are permitted anywhere in the expression tree.
 _ALLOWED_NODES: tuple[type[ast.AST], ...] = (
     ast.Expression,
-    ast.BoolOp, ast.And, ast.Or,
-    ast.UnaryOp, ast.Not,
+    ast.BoolOp,
+    ast.And,
+    ast.Or,
+    ast.UnaryOp,
+    ast.Not,
     ast.Compare,
-    ast.Eq, ast.NotEq, ast.Lt, ast.Gt, ast.LtE, ast.GtE,
+    ast.Eq,
+    ast.NotEq,
+    ast.Lt,
+    ast.Gt,
+    ast.LtE,
+    ast.GtE,
     ast.Constant,
     ast.Name,
     ast.Attribute,
@@ -50,9 +58,7 @@ def compile_condition(expr: str) -> Condition:
     try:
         tree = ast.parse(expr, mode="eval")
     except SyntaxError as exc:
-        raise DSLError(
-            f"invalid condition syntax in {expr!r}: {exc.msg}"
-        ) from exc
+        raise DSLError(f"invalid condition syntax in {expr!r}: {exc.msg}") from exc
 
     for node in ast.walk(tree):
         if not isinstance(node, _ALLOWED_NODES):

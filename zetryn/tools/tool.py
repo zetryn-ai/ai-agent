@@ -78,7 +78,9 @@ class Tool:
                 error=f"{type(exc).__name__}: {exc}",
                 duration_ms=(time.perf_counter() - t0) * 1000,
             )
-        return ToolResult(ok=True, value=value, duration_ms=(time.perf_counter() - t0) * 1000)
+        return ToolResult(
+            ok=True, value=value, duration_ms=(time.perf_counter() - t0) * 1000
+        )
 
     def spec(self) -> dict[str, Any]:
         """OpenAI function-calling spec (for future LLM tool-use loops)."""

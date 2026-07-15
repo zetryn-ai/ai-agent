@@ -24,7 +24,9 @@ SAMPLE_TOKENS: dict[str, TokenInput] = {
         mint="GOOD",
         symbol="PEPE2",
         name="Pepe Reborn",
-        market=MarketData(mcap=400_000, liquidity_usd=42_000, volume_1h=120_000, txns_1h=850),
+        market=MarketData(
+            mcap=400_000, liquidity_usd=42_000, volume_1h=120_000, txns_1h=850
+        ),
         holders=HolderData(count=620, top10_pct=0.22, dev_pct=0.02),
         contract=ContractData(lp_burned=True),
         social=SocialData(
@@ -39,7 +41,9 @@ SAMPLE_TOKENS: dict[str, TokenInput] = {
         name="Safe Moon Inu",
         market=MarketData(mcap=90_000, liquidity_usd=8_000, volume_1h=15_000),
         holders=HolderData(count=120, top10_pct=0.85, dev_pct=0.4),
-        contract=ContractData(mint_authority_active=True, notes=["mint authority not revoked"]),
+        contract=ContractData(
+            mint_authority_active=True, notes=["mint authority not revoked"]
+        ),
     ),
     "LOWLIQ": TokenInput(
         mint="LOWLIQ",

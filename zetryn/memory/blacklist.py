@@ -16,7 +16,9 @@ class Blacklist:
         self._store = store
         self._ns = namespace
 
-    async def add(self, key: str, reason: str = "", *, ttl: float | None = None) -> None:
+    async def add(
+        self, key: str, reason: str = "", *, ttl: float | None = None
+    ) -> None:
         await self._store.put(self._ns, key, {"key": key, "reason": reason}, ttl=ttl)
 
     async def is_blacklisted(self, key: str) -> bool:

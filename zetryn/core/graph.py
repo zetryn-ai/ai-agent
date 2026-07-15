@@ -49,7 +49,9 @@ class Graph:
         self._compiled = False
         return self
 
-    def add_edge(self, source: str, target: str, when: Condition | None = None) -> Graph:
+    def add_edge(
+        self, source: str, target: str, when: Condition | None = None
+    ) -> Graph:
         self._edges.append(Edge(source=source, target=target, when=when))
         self._compiled = False
         return self

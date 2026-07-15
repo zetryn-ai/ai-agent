@@ -93,7 +93,9 @@ class LocalSubscriptionAuth:
         self._plan = plan
         preset = PLAN_PRESETS.get(plan, {})
         self._models = (
-            list(models) if models is not None else preset.get("models", list(MODEL_TIERS))
+            list(models)
+            if models is not None
+            else preset.get("models", list(MODEL_TIERS))
         )
         self._limits = preset.get("limits", {})
 

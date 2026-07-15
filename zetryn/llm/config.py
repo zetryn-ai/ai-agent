@@ -22,7 +22,9 @@ class ProviderConfig:
     base_url: str
     model: str
     key_envs: list[str] = field(default_factory=list)  # NAMES of env vars (production)
-    keys: list[str] = field(default_factory=list)  # literal keys (quick local testing only)
+    keys: list[str] = field(
+        default_factory=list
+    )  # literal keys (quick local testing only)
     timeout_s: float = 30.0
     max_retries: int = 3
     cooldown_s: float = 60.0

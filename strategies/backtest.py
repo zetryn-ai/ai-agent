@@ -44,7 +44,8 @@ def build_items(
     """Turn a dataset into (items, outcomes) for the Backtester."""
     cfg = config or ScannerConfig()
     items = [
-        (cid, TradingContext(token=case.token, config=cfg)) for cid, case in dataset.items()
+        (cid, TradingContext(token=case.token, config=cfg))
+        for cid, case in dataset.items()
     ]
     outcomes = {cid: case.outcome for cid, case in dataset.items()}
     return items, outcomes
@@ -56,8 +57,12 @@ ENTRY_ACTIONS = {"alert", "buy"}
 
 def trading_metrics(records: list[RunRecord]) -> dict[str, Any]:
     """Score backtest records with trading-relevant metrics."""
-    entered = [r for r in records if _action(r) in ENTRY_ACTIONS and r.outcome is not None]
-    skipped = [r for r in records if _action(r) not in ENTRY_ACTIONS and r.outcome is not None]
+    entered = [
+        r for r in records if _action(r) in ENTRY_ACTIONS and r.outcome is not None
+    ]
+    skipped = [
+        r for r in records if _action(r) not in ENTRY_ACTIONS and r.outcome is not None
+    ]
 
     # PnL & hit rate over entered positions.
     pnls = [r.outcome.pnl_pct for r in entered]
@@ -84,8 +89,12 @@ def trading_metrics(records: list[RunRecord]) -> dict[str, Any]:
         "total_pnl_pct": round(total_pnl, 4),
         "rugs_total": len(rugs),
         "rugs_entered": len(rugs_entered),  # the costly mistakes
-        "rug_avoidance_recall": round(rug_recall, 4) if rug_recall is not None else None,
-        "entry_precision": round(entry_precision, 4) if entry_precision is not None else None,
+        "rug_avoidance_recall": round(rug_recall, 4)
+        if rug_recall is not None
+        else None,
+        "entry_precision": round(entry_precision, 4)
+        if entry_precision is not None
+        else None,
     }
 
 
@@ -200,8 +209,10 @@ def closed_trade_metrics(
         overall.add(t)
         by_source.setdefault(t.source or "unknown", _Bucket()).add(t)
         if t.confidence is not None:
-            idx = min(int(max(0.0, min(1.0, t.confidence)) * confidence_bins),
-                      confidence_bins - 1)
+            idx = min(
+                int(max(0.0, min(1.0, t.confidence)) * confidence_bins),
+                confidence_bins - 1,
+            )
             label = f"{idx * width:.1f}-{(idx + 1) * width:.1f}"
             by_conf.setdefault(label, _Bucket()).add(t)
 

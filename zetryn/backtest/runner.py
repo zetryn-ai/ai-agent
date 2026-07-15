@@ -81,7 +81,9 @@ class Backtester:
         records: list[RunRecord] = []
         for item_id, context in items:
             try:
-                state = await self._graph.run(State(context=context), max_steps=max_steps)
+                state = await self._graph.run(
+                    State(context=context), max_steps=max_steps
+                )
                 records.append(
                     RunRecord(
                         item_id=item_id,
@@ -92,6 +94,10 @@ class Backtester:
                 )
             except Exception as exc:  # noqa: BLE001 - record failures, keep going
                 records.append(
-                    RunRecord(item_id=item_id, decision=None, error=f"{type(exc).__name__}: {exc}")
+                    RunRecord(
+                        item_id=item_id,
+                        decision=None,
+                        error=f"{type(exc).__name__}: {exc}",
+                    )
                 )
         return BacktestResult(records=records)

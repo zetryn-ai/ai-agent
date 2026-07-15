@@ -56,7 +56,7 @@ def build_sniper(
     g = Graph("memecoin_sniper")
     g.add_node(RuleNode("fast_safety", sn.fast_safety))
     g.add_node(RuleNode("fast_market", sn.fast_market))
-    g.add_node(RuleNode("rule_buy", sn.rule_size_and_buy))
+    g.add_node(RuleNode("rule_buy", sn.rule_entry))
 
     has_llm = llm_client is not None
     has_reflect = has_llm and decision_log is not None

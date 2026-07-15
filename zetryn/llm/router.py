@@ -43,23 +43,26 @@ from .types import (
 PROVIDER_FREE_TIER_LIMITS: dict[str, dict[str, RateLimit]] = {
     # Groq free tier — source: https://console.groq.com/docs/rate-limits
     "groq": {
-        "llama-3.1-8b-instant":   RateLimit(rpm=30, rpd=14_400, tpm=6_000,  tpd=500_000),
-        "llama-3.3-70b-versatile":RateLimit(rpm=30, rpd=1_000,  tpm=12_000, tpd=100_000),
-        "meta-llama/llama-4-scout-17b-16e-instruct":
-                                  RateLimit(rpm=30, rpd=1_000,  tpm=30_000, tpd=500_000),
-        "openai/gpt-oss-120b":    RateLimit(rpm=30, rpd=1_000,  tpm=8_000,  tpd=200_000),
-        "openai/gpt-oss-20b":     RateLimit(rpm=30, rpd=1_000,  tpm=8_000,  tpd=200_000),
-        "qwen/qwen3-32b":         RateLimit(rpm=60, rpd=1_000,  tpm=6_000,  tpd=500_000),
-        "groq/compound":          RateLimit(rpm=30, rpd=250,    tpm=70_000),
-        "groq/compound-mini":     RateLimit(rpm=30, rpd=250,    tpm=70_000),
+        "llama-3.1-8b-instant": RateLimit(rpm=30, rpd=14_400, tpm=6_000, tpd=500_000),
+        "llama-3.3-70b-versatile": RateLimit(
+            rpm=30, rpd=1_000, tpm=12_000, tpd=100_000
+        ),
+        "meta-llama/llama-4-scout-17b-16e-instruct": RateLimit(
+            rpm=30, rpd=1_000, tpm=30_000, tpd=500_000
+        ),
+        "openai/gpt-oss-120b": RateLimit(rpm=30, rpd=1_000, tpm=8_000, tpd=200_000),
+        "openai/gpt-oss-20b": RateLimit(rpm=30, rpd=1_000, tpm=8_000, tpd=200_000),
+        "qwen/qwen3-32b": RateLimit(rpm=60, rpd=1_000, tpm=6_000, tpd=500_000),
+        "groq/compound": RateLimit(rpm=30, rpd=250, tpm=70_000),
+        "groq/compound-mini": RateLimit(rpm=30, rpd=250, tpm=70_000),
     },
     # Gemini free tier — source: Google AI Studio quota dashboard
     "gemini": {
-        "gemini-2.5-flash":       RateLimit(rpm=5,  rpd=20,    tpm=250_000),
-        "gemini-2.5-flash-lite":  RateLimit(rpm=10, rpd=20,    tpm=250_000),
-        "gemini-3-flash":         RateLimit(rpm=5,  rpd=20,    tpm=250_000),
-        "gemini-3.1-flash-lite":  RateLimit(rpm=15, rpd=500,   tpm=250_000),
-        "gemini-3.5-flash":       RateLimit(rpm=5,  rpd=20,    tpm=250_000),
+        "gemini-2.5-flash": RateLimit(rpm=5, rpd=20, tpm=250_000),
+        "gemini-2.5-flash-lite": RateLimit(rpm=10, rpd=20, tpm=250_000),
+        "gemini-3-flash": RateLimit(rpm=5, rpd=20, tpm=250_000),
+        "gemini-3.1-flash-lite": RateLimit(rpm=15, rpd=500, tpm=250_000),
+        "gemini-3.5-flash": RateLimit(rpm=5, rpd=20, tpm=250_000),
     },
     # OpenRouter free tier — source: https://openrouter.ai/docs/api/reference/limits
     # Free-tier models (":free" suffix) share a global limit: 20 RPM, 50 RPD
@@ -72,45 +75,45 @@ PROVIDER_FREE_TIER_LIMITS: dict[str, dict[str, RateLimit]] = {
     # Wafer-scale hardware; ~2,600 tok/s output speed. RPM is the practical
     # constraint on free tier (TPM is generous).
     "cerebras": {
-        "llama-4-scout-17b-16e-instruct":   RateLimit(rpm=30, tpm=60_000, tpd=1_000_000),
-        "llama-3.3-70b":                    RateLimit(rpm=30, tpm=60_000, tpd=1_000_000),
-        "qwen-3-32b":                       RateLimit(rpm=30, tpm=60_000, tpd=1_000_000),
-        "qwen-3-235b-a22b-instruct-2507":   RateLimit(rpm=5,  tpm=30_000, tpd=1_000_000),
-        "gpt-oss-120b":                     RateLimit(rpm=30, tpm=60_000, tpd=1_000_000),
-        "glm-4.5-air":                      RateLimit(rpm=5,  tpm=30_000, tpd=1_000_000),
+        "llama-4-scout-17b-16e-instruct": RateLimit(rpm=30, tpm=60_000, tpd=1_000_000),
+        "llama-3.3-70b": RateLimit(rpm=30, tpm=60_000, tpd=1_000_000),
+        "qwen-3-32b": RateLimit(rpm=30, tpm=60_000, tpd=1_000_000),
+        "qwen-3-235b-a22b-instruct-2507": RateLimit(rpm=5, tpm=30_000, tpd=1_000_000),
+        "gpt-oss-120b": RateLimit(rpm=30, tpm=60_000, tpd=1_000_000),
+        "glm-4.5-air": RateLimit(rpm=5, tpm=30_000, tpd=1_000_000),
     },
     # Mistral La Plateforme — "Experiment plan" free tier.
     # Source: https://docs.mistral.ai/
     # Very tight RPM (2!) but huge monthly TPM budget. Best for low-volume
     # high-quality calls, NOT a primary for live trading.
     "mistral": {
-        "mistral-large-latest":   RateLimit(rpm=2, tpm=500_000),
-        "mistral-small-latest":   RateLimit(rpm=2, tpm=500_000),
-        "codestral-latest":       RateLimit(rpm=2, tpm=500_000),
-        "pixtral-12b-2409":       RateLimit(rpm=2, tpm=500_000),
-        "mistral-embed":          RateLimit(rpm=2, tpm=500_000),
+        "mistral-large-latest": RateLimit(rpm=2, tpm=500_000),
+        "mistral-small-latest": RateLimit(rpm=2, tpm=500_000),
+        "codestral-latest": RateLimit(rpm=2, tpm=500_000),
+        "pixtral-12b-2409": RateLimit(rpm=2, tpm=500_000),
+        "mistral-embed": RateLimit(rpm=2, tpm=500_000),
     },
     # SambaNova Cloud free tier — source: https://cloud.sambanova.ai/
     # RDU hardware. New accounts get $5 credit for 30 days; after that the
     # listed RPM caps apply per model.
     "sambanova": {
-        "Meta-Llama-3.1-8B-Instruct":   RateLimit(rpm=30, rpd=20, tpd=200_000),
-        "Meta-Llama-3.1-70B-Instruct":  RateLimit(rpm=20, rpd=20, tpd=200_000),
+        "Meta-Llama-3.1-8B-Instruct": RateLimit(rpm=30, rpd=20, tpd=200_000),
+        "Meta-Llama-3.1-70B-Instruct": RateLimit(rpm=20, rpd=20, tpd=200_000),
         "Meta-Llama-3.1-405B-Instruct": RateLimit(rpm=10, rpd=20, tpd=200_000),
-        "Meta-Llama-3.3-70B-Instruct":  RateLimit(rpm=20, rpd=20, tpd=200_000),
-        "Qwen2.5-72B-Instruct":         RateLimit(rpm=20, rpd=20, tpd=200_000),
+        "Meta-Llama-3.3-70B-Instruct": RateLimit(rpm=20, rpd=20, tpd=200_000),
+        "Qwen2.5-72B-Instruct": RateLimit(rpm=20, rpd=20, tpd=200_000),
     },
     # NVIDIA NIM (build.nvidia.com) — free for prototyping, phone-verified.
     # Source: https://build.nvidia.com/
     # Same flat limit across most models on free tier; some preview models
     # have lower caps.
     "nvidia_nim": {
-        "deepseek-ai/deepseek-r1":              RateLimit(rpm=40),
-        "deepseek-ai/deepseek-v3":              RateLimit(rpm=40),
-        "meta/llama-3.3-70b-instruct":          RateLimit(rpm=40),
-        "meta/llama-3.1-405b-instruct":         RateLimit(rpm=40),
-        "nvidia/nemotron-4-340b-instruct":      RateLimit(rpm=40),
-        "qwen/qwen2.5-coder-32b-instruct":      RateLimit(rpm=40),
+        "deepseek-ai/deepseek-r1": RateLimit(rpm=40),
+        "deepseek-ai/deepseek-v3": RateLimit(rpm=40),
+        "meta/llama-3.3-70b-instruct": RateLimit(rpm=40),
+        "meta/llama-3.1-405b-instruct": RateLimit(rpm=40),
+        "nvidia/nemotron-4-340b-instruct": RateLimit(rpm=40),
+        "qwen/qwen2.5-coder-32b-instruct": RateLimit(rpm=40),
     },
 }
 
@@ -378,9 +381,11 @@ def build_tier_entries(
         client = clients_by_provider.get(spec.provider)
         if client is None:
             continue
-        entries.append(RouterEntry(
-            client=client,
-            name=f"{spec.provider}:{spec.model}",
-            limit=get_free_tier_limit(spec.provider, spec.model),
-        ))
+        entries.append(
+            RouterEntry(
+                client=client,
+                name=f"{spec.provider}:{spec.model}",
+                limit=get_free_tier_limit(spec.provider, spec.model),
+            )
+        )
     return entries

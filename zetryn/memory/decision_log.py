@@ -20,7 +20,9 @@ class DecisionLog:
         self._ns = namespace
 
     async def log(self, run_id: str, record: dict[str, Any]) -> None:
-        await self._store.put(self._ns, run_id, {"run_id": run_id, "outcome": None, **record})
+        await self._store.put(
+            self._ns, run_id, {"run_id": run_id, "outcome": None, **record}
+        )
 
     async def record_outcome(self, run_id: str, outcome: dict[str, Any]) -> None:
         entry = await self._store.get(self._ns, run_id)

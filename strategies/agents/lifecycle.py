@@ -56,6 +56,7 @@ def build_lifecycle(
     g.add_node(RuleNode("emergency_exit", ln.emergency_exit))
     g.add_node(RuleNode("hard_stop_loss", ln.hard_stop_loss))
     g.add_node(RuleNode("time_stop", ln.time_stop))
+    g.add_node(RuleNode("stagnation_stop", ln.stagnation_stop))
     g.add_node(RuleNode("trailing_stop", ln.trailing_stop))
     g.add_node(RuleNode("tp_ladder", ln.tp_ladder))
     g.add_node(RuleNode("rule_hold", ln.rule_hold))
@@ -97,24 +98,25 @@ def build_lifecycle(
     g.set_entry("emergency_exit")
     g.add_edge("emergency_exit", "hard_stop_loss")
     g.add_edge("hard_stop_loss", "time_stop")
+    g.add_edge("time_stop", "stagnation_stop")
 
     if has_llm:
         # rule + hybrid_audit go through the full deterministic ladder.
         g.add_edge(
-            "time_stop",
+            "stagnation_stop",
             "trailing_stop",
             when=lambda s: s.context.config.decision_mode in ("rule", "hybrid_audit"),
         )
         if has_reflect:
             g.add_edge(
-                "time_stop",
+                "stagnation_stop",
                 "reflect",
                 when=lambda s: s.context.config.decision_mode in ("llm", "hybrid"),
             )
             g.add_edge("reflect", "lifecycle_decide")
         else:
             g.add_edge(
-                "time_stop",
+                "stagnation_stop",
                 "lifecycle_decide",
                 when=lambda s: s.context.config.decision_mode in ("llm", "hybrid"),
             )
@@ -133,7 +135,7 @@ def build_lifecycle(
         )
         g.add_edge("audit_dispatch", END)
     else:
-        g.add_edge("time_stop", "trailing_stop")
+        g.add_edge("stagnation_stop", "trailing_stop")
         g.add_edge("trailing_stop", "tp_ladder")
         g.add_edge("tp_ladder", "rule_hold")
         g.add_edge("rule_hold", END)

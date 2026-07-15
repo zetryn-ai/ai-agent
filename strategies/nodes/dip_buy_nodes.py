@@ -175,8 +175,7 @@ def market_gate(state: State) -> Command | None:
     if w.sniper_wallet_count > cfg.max_sniper_wallets:
         return _abort(
             state,
-            f"sniper_count {w.sniper_wallet_count} above max "
-            f"{cfg.max_sniper_wallets}",
+            f"sniper_count {w.sniper_wallet_count} above max {cfg.max_sniper_wallets}",
         )
     return None
 
@@ -367,8 +366,7 @@ def _audit_prompt(state: State) -> list[Message]:
         user(
             f"DECISION: action={d.action} size={d.size} "
             f"confidence={d.confidence}\n"
-            f"Reasons: {d.reasons}\n\n"
-            + _dip_facts(state)
+            f"Reasons: {d.reasons}\n\n" + _dip_facts(state)
         ),
     ]
 

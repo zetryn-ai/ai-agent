@@ -61,25 +61,18 @@ def _validate_construction(
     if not isinstance(name, str) or not name:
         raise ValueError("panel node 'name' must be a non-empty string")
     if not isinstance(specialists, dict) or not specialists:
-        raise ValueError(
-            "panel 'specialists' must be a non-empty dict[str, Graph]"
-        )
+        raise ValueError("panel 'specialists' must be a non-empty dict[str, Graph]")
     for spec_name, graph in specialists.items():
         if not isinstance(spec_name, str) or not spec_name:
-            raise ValueError(
-                "every specialist key must be a non-empty string"
-            )
+            raise ValueError("every specialist key must be a non-empty string")
         if not isinstance(graph, Graph):
             raise TypeError(
-                f"specialist {spec_name!r} must be a Graph, "
-                f"got {type(graph).__name__}"
+                f"specialist {spec_name!r} must be a Graph, got {type(graph).__name__}"
             )
     if not callable(aggregator):
         raise TypeError("'aggregator' must be callable")
     if mode not in _VALID_MODES:
-        raise ValueError(
-            f"'mode' must be one of {_VALID_MODES}, got {mode!r}"
-        )
+        raise ValueError(f"'mode' must be one of {_VALID_MODES}, got {mode!r}")
     if short_circuit_on is not None and not callable(short_circuit_on):
         raise TypeError("'short_circuit_on' must be callable or None")
     if mode == "parallel" and short_circuit_on is not None:
@@ -96,7 +89,9 @@ def _validate_construction(
         )
 
 
-async def _run_one(name: str, graph: Graph, sub_state: State) -> tuple[str, Any | None, Exception | None]:
+async def _run_one(
+    name: str, graph: Graph, sub_state: State
+) -> tuple[str, Any | None, Exception | None]:
     """Run a single specialist sub-graph, capturing exceptions for caller."""
     try:
         final = await graph.run(sub_state)
@@ -143,8 +138,7 @@ async def _run_panel(
             if exc is not None:
                 if n in required:
                     raise PanelExecutionError(
-                        f"required specialist {n!r} failed: "
-                        f"{type(exc).__name__}: {exc}"
+                        f"required specialist {n!r} failed: {type(exc).__name__}: {exc}"
                     ) from exc
                 failures[n] = f"{type(exc).__name__}: {exc}"
                 results[n] = None
@@ -162,8 +156,7 @@ async def _run_panel(
         if exc is not None:
             if n in required:
                 raise PanelExecutionError(
-                    f"required specialist {n!r} failed: "
-                    f"{type(exc).__name__}: {exc}"
+                    f"required specialist {n!r} failed: {type(exc).__name__}: {exc}"
                 ) from exc
             failures[n] = f"{type(exc).__name__}: {exc}"
             results[n] = None
@@ -213,8 +206,12 @@ class PanelNode:
         short_circuit_on: ShortCircuitFn | None = None,
     ) -> None:
         _validate_construction(
-            name, specialists, aggregator,
-            mode=mode, required=required, short_circuit_on=short_circuit_on,
+            name,
+            specialists,
+            aggregator,
+            mode=mode,
+            required=required,
+            short_circuit_on=short_circuit_on,
         )
         self.name = name
         self._specialists = specialists
@@ -226,7 +223,9 @@ class PanelNode:
 
     async def run(self, state: State) -> Command | None:
         results, failures, sc = await _run_panel(
-            self.name, self._specialists, state,
+            self.name,
+            self._specialists,
+            state,
             mode=self._mode,
             required=self._required,
             short_circuit_on=self._short_circuit_on,
@@ -259,8 +258,12 @@ class PanelDecisionNode:
         short_circuit_on: ShortCircuitFn | None = None,
     ) -> None:
         _validate_construction(
-            name, specialists, aggregator,
-            mode=mode, required=required, short_circuit_on=short_circuit_on,
+            name,
+            specialists,
+            aggregator,
+            mode=mode,
+            required=required,
+            short_circuit_on=short_circuit_on,
         )
         self.name = name
         self._specialists = specialists
@@ -272,7 +275,9 @@ class PanelDecisionNode:
 
     async def run(self, state: State) -> Command | None:
         results, failures, sc = await _run_panel(
-            self.name, self._specialists, state,
+            self.name,
+            self._specialists,
+            state,
             mode=self._mode,
             required=self._required,
             short_circuit_on=self._short_circuit_on,

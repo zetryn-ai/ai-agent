@@ -87,11 +87,13 @@ async def tool_use_loop(
             return last_result, trace
 
         # Append the assistant turn that requested the tool calls.
-        convo.append({
-            "role": "assistant",
-            "content": last_result.text or "",
-            "tool_calls": last_result.tool_calls,
-        })
+        convo.append(
+            {
+                "role": "assistant",
+                "content": last_result.text or "",
+                "tool_calls": last_result.tool_calls,
+            }
+        )
 
         # Execute every tool call and append a tool-role message per result.
         for call in last_result.tool_calls:
@@ -111,12 +113,14 @@ async def tool_use_loop(
                     "error": exec_result.error,
                     "duration_ms": exec_result.duration_ms,
                 }
-            convo.append({
-                "role": "tool",
-                "tool_call_id": call.get("id", ""),
-                "name": name,
-                "content": json.dumps(tool_result, default=str),
-            })
+            convo.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": call.get("id", ""),
+                    "name": name,
+                    "content": json.dumps(tool_result, default=str),
+                }
+            )
 
     # Hit the iteration cap — return whatever the model last said.
     trace.truncated = True

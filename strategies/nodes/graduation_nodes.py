@@ -64,7 +64,9 @@ def graduation_gate(state: State) -> Command | None:
     cfg = state.context.config
 
     if cfg.require_lp_burned and ev.lp_burned is False:
-        return _abort(state, "LP not burned at graduation", action="abort", rug_risk=True)
+        return _abort(
+            state, "LP not burned at graduation", action="abort", rug_risk=True
+        )
     if ev.pair_age_seconds > cfg.max_pair_age_seconds:
         return _abort(
             state,
@@ -134,8 +136,7 @@ def market_gate(state: State) -> Command | None:
     if w.sniper_wallet_count > cfg.max_sniper_wallets:
         return _abort(
             state,
-            f"sniper_count {w.sniper_wallet_count} above max "
-            f"{cfg.max_sniper_wallets}",
+            f"sniper_count {w.sniper_wallet_count} above max {cfg.max_sniper_wallets}",
         )
     return None
 
@@ -147,8 +148,18 @@ def rule_size_and_buy(state: State) -> None:
     h = state.context.token.holders
 
     # Reward strong demand: shorter fills + more unique buyers ⇒ closer to max.
-    fill_ratio = max(0.0, min(1.0, 1.0 - (ev.bonding_curve_fill_seconds / max(cfg.max_fill_seconds, 1.0))))
-    buyer_ratio = max(0.0, min(1.0, ev.bonding_curve_unique_buyers / max(cfg.min_unique_buyers * 3.0, 1.0)))
+    fill_ratio = max(
+        0.0,
+        min(
+            1.0, 1.0 - (ev.bonding_curve_fill_seconds / max(cfg.max_fill_seconds, 1.0))
+        ),
+    )
+    buyer_ratio = max(
+        0.0,
+        min(
+            1.0, ev.bonding_curve_unique_buyers / max(cfg.min_unique_buyers * 3.0, 1.0)
+        ),
+    )
     demand_mult = 0.6 + 0.4 * ((fill_ratio + buyer_ratio) / 2)  # 0.6..1.0
 
     concentration_penalty = max(0.0, h.top10_pct - 0.2)
@@ -255,7 +266,9 @@ def graduation_result(model: GraduationVerdict, state: State) -> Decision:
     cfg = state.context.config
     size = max(0.0, min(model.size_pct * cfg.max_size, cfg.max_size))
     action = model.action if model.action in {"buy", "skip", "abort"} else "skip"
-    reasons: list[str] = [f"LLM: {model.reasoning}" if model.reasoning else "LLM decision"]
+    reasons: list[str] = [
+        f"LLM: {model.reasoning}" if model.reasoning else "LLM decision"
+    ]
     reasons.extend(f"concern: {c}" for c in model.concerns)
     return Decision(
         action=action,
@@ -310,8 +323,7 @@ def _audit_prompt(state: State) -> list[Message]:
         ),
         user(
             f"DECISION: action={d.action} size={d.size} confidence={d.confidence}\n"
-            f"Reasons: {d.reasons}\n\n"
-            + _grad_facts(state)
+            f"Reasons: {d.reasons}\n\n" + _grad_facts(state)
         ),
     ]
 

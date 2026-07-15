@@ -27,7 +27,9 @@ class Node(Protocol):
 
 
 # A rule function may be sync or async and returns a Command or None.
-RuleFn = Callable[[State], Command | None] | Callable[[State], Awaitable[Command | None]]
+RuleFn = (
+    Callable[[State], Command | None] | Callable[[State], Awaitable[Command | None]]
+)
 
 
 class RuleNode:

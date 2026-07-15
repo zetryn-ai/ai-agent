@@ -171,9 +171,7 @@ def _resolve_reference(ref: Any, kind: str) -> Any:
             f"{kind} module {module_path!r} not importable: {exc}"
         ) from exc
     if not hasattr(module, attr):
-        raise ConfigError(
-            f"{kind} module {module_path!r} has no attribute {attr!r}"
-        )
+        raise ConfigError(f"{kind} module {module_path!r} has no attribute {attr!r}")
     return getattr(module, attr)
 
 
@@ -186,8 +184,7 @@ def _resolve_placeholder(value: Any, registry: dict[str, Any], kind: str) -> Any
     m = _PLACEHOLDER_RE.match(value)
     if not m:
         raise ConfigError(
-            f"{kind} must be a registry placeholder of form ${{name}}, "
-            f"got {value!r}"
+            f"{kind} must be a registry placeholder of form ${{name}}, got {value!r}"
         )
     key = m.group(1)
     if key not in registry:
@@ -225,8 +222,7 @@ def _build_node(
         )
     if ntype not in _SUPPORTED_TYPES:
         raise ConfigError(
-            f"unsupported node type {ntype!r} "
-            f"(supported: {sorted(_SUPPORTED_TYPES)})",
+            f"unsupported node type {ntype!r} (supported: {sorted(_SUPPORTED_TYPES)})",
             path=path,
             location=f"nodes[{index}] ({name!r})",
         )
@@ -273,22 +269,26 @@ def _build_llm_node(
 
     client = _wrap(
         lambda: _resolve_placeholder(spec["client"], registry, "client"),
-        path=path, loc=loc,
+        path=path,
+        loc=loc,
     )
     schema = _wrap(
         lambda: _resolve_reference(spec["schema"], "schema"),
-        path=path, loc=loc,
+        path=path,
+        loc=loc,
     )
     prompt_fn = _wrap(
         lambda: _resolve_reference(spec["prompt_fn"], "prompt_fn"),
-        path=path, loc=loc,
+        path=path,
+        loc=loc,
     )
 
     fallback_fn = None
     if "fallback_fn" in spec:
         fallback_fn = _wrap(
             lambda: _resolve_reference(spec["fallback_fn"], "fallback_fn"),
-            path=path, loc=loc,
+            path=path,
+            loc=loc,
         )
 
     return LLMNode(
@@ -319,33 +319,39 @@ def _build_llm_decision_node(
 
     client = _wrap(
         lambda: _resolve_placeholder(spec["client"], registry, "client"),
-        path=path, loc=loc,
+        path=path,
+        loc=loc,
     )
     schema = _wrap(
         lambda: _resolve_reference(spec["schema"], "schema"),
-        path=path, loc=loc,
+        path=path,
+        loc=loc,
     )
     prompt_fn = _wrap(
         lambda: _resolve_reference(spec["prompt_fn"], "prompt_fn"),
-        path=path, loc=loc,
+        path=path,
+        loc=loc,
     )
     result_fn = _wrap(
         lambda: _resolve_reference(spec["result_fn"], "result_fn"),
-        path=path, loc=loc,
+        path=path,
+        loc=loc,
     )
 
     guardrail_fn = None
     if "guardrail_fn" in spec:
         guardrail_fn = _wrap(
             lambda: _resolve_reference(spec["guardrail_fn"], "guardrail_fn"),
-            path=path, loc=loc,
+            path=path,
+            loc=loc,
         )
 
     fallback_fn = None
     if "fallback_fn" in spec:
         fallback_fn = _wrap(
             lambda: _resolve_reference(spec["fallback_fn"], "fallback_fn"),
-            path=path, loc=loc,
+            path=path,
+            loc=loc,
         )
 
     goto = spec.get("goto", END)
@@ -391,7 +397,8 @@ def _add_edge(
     if src not in node_names:
         raise ConfigError(
             f"edge.from {src!r} not in registered nodes",
-            path=path, location=loc,
+            path=path,
+            location=loc,
         )
 
     # Accept literal "END" and the END sentinel itself.
@@ -399,9 +406,9 @@ def _add_edge(
         dst = END
     if dst != END and dst not in node_names:
         raise ConfigError(
-            f"edge.to {dst!r} not in registered nodes "
-            f"(use 'END' for terminal edges)",
-            path=path, location=loc,
+            f"edge.to {dst!r} not in registered nodes (use 'END' for terminal edges)",
+            path=path,
+            location=loc,
         )
 
     condition = None
@@ -409,14 +416,13 @@ def _add_edge(
         if not isinstance(when, str):
             raise ConfigError(
                 f"'when' must be a string expression, got {type(when).__name__}",
-                path=path, location=loc,
+                path=path,
+                location=loc,
             )
         try:
             condition = compile_condition(when)
         except DSLError as exc:
-            raise ConfigError(
-                f"when: {exc}", path=path, location=loc
-            ) from exc
+            raise ConfigError(f"when: {exc}", path=path, location=loc) from exc
 
     graph.add_edge(src, dst, when=condition)
 

@@ -68,9 +68,12 @@ def intel_gate(state: State) -> None:
 
     state.scratch["intel_ok"] = not (too_many_bundlers or low_external or rug_dev)
     state.scratch["intel_block_reason"] = (
-        "dev rug history" if rug_dev
-        else "bundle attack detected" if too_many_bundlers
-        else f"external safety score too low ({w.safety_score})" if low_external
+        "dev rug history"
+        if rug_dev
+        else "bundle attack detected"
+        if too_many_bundlers
+        else f"external safety score too low ({w.safety_score})"
+        if low_external
         else None
     )
 
@@ -139,7 +142,9 @@ def pumpfun_context(state: State) -> None:
         return
 
     state.scratch["bonding_curve_pct"] = p.bonding_curve_pct
-    state.scratch["pumpfun_urgency"] = p.bonding_curve_pct >= cfg.pumpfun_curve_urgency_pct
+    state.scratch["pumpfun_urgency"] = (
+        p.bonding_curve_pct >= cfg.pumpfun_curve_urgency_pct
+    )
     state.scratch["pumpfun_mayhem"] = p.is_mayhem_mode
 
 
@@ -155,14 +160,18 @@ def social_scorer(state: State) -> None:
     # Reach (followers) + raw tweet volume — broad awareness.
     reach = _clamp(tw.followers / 10_000) * 0.25 + _clamp(tw.tweets_1h / 50) * 0.05
     # Mentions + engagement — other people TALKING about it (stronger signal).
-    mentions = _clamp(tw.mentions_1h / 300) * 0.15 + _clamp(tw.engagement / 10_000) * 0.10
+    mentions = (
+        _clamp(tw.mentions_1h / 300) * 0.15 + _clamp(tw.engagement / 10_000) * 0.10
+    )
     # Momentum: velocity + growth rate.
     growth = _clamp(tw.mention_growth_pct / 200) * 0.10
     velocity = _clamp(tw.velocity_tpm / 20) * 0.05
     # Sentiment prior (external service).
     sentiment_bonus = (
-        0.10 if tw.sentiment == "bullish"
-        else -0.10 if tw.sentiment == "bearish"
+        0.10
+        if tw.sentiment == "bullish"
+        else -0.10
+        if tw.sentiment == "bearish"
         else 0.0
     )
     # Telegram + KOL.

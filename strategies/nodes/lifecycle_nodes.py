@@ -146,6 +146,29 @@ def time_stop(state: State) -> Command | None:
     return None
 
 
+def stagnation_stop(state: State) -> Command | None:
+    """Dead-capital exit: flat too long -> exit_full (frees the slot)."""
+    if state.output is not None:
+        return None
+    p = state.context.position
+    cfg = state.context.config
+    if (
+        cfg.stagnation_after_s > 0
+        and p.holding_seconds >= cfg.stagnation_after_s
+        and abs(p.pnl_pct) < cfg.stagnation_max_pnl_pct
+    ):
+        return _hard_emit(
+            state,
+            "exit_full",
+            size=p.current_size,
+            reasons=[
+                f"stagnation: pnl {p.pnl_pct:+.1%} after {p.holding_seconds:.0f}s "
+                f"(< {cfg.stagnation_max_pnl_pct:.0%} move)"
+            ],
+        )
+    return None
+
+
 def trailing_stop(state: State) -> None:
     """Trailing drawdown stop — soft exit, falls through to rule_hold.
 
@@ -346,8 +369,7 @@ def lifecycle_result(model: LifecycleVerdict, state: State) -> Decision:
         action=model.action,
         confidence=model.confidence,
         size=round(size, 6) if model.action != "hold" else None,
-        reasons=[f"LLM: {model.reasoning}"]
-        + [f"concern: {c}" for c in model.concerns],
+        reasons=[f"LLM: {model.reasoning}"] + [f"concern: {c}" for c in model.concerns],
         flags={"rug_risk": False, "llm_failed": False},
         meta={"run_id": state.run_id, "latency_ms": _latency_ms(state)},
     )
@@ -390,7 +412,9 @@ def lifecycle_guardrail(decision: Decision | None, state: State) -> Decision:
 
     if decision.size is not None and decision.size > p.current_size:
         decision.size = p.current_size
-        decision.reasons.append(f"guardrail: size capped at current_size {p.current_size}")
+        decision.reasons.append(
+            f"guardrail: size capped at current_size {p.current_size}"
+        )
     return decision
 
 
@@ -409,8 +433,7 @@ def _audit_prompt(state: State) -> list[Message]:
         ),
         user(
             f"DECISION: action={d.action} size={d.size} confidence={d.confidence}\n"
-            f"Reasons: {d.reasons}\n\n"
-            + _facts(state)
+            f"Reasons: {d.reasons}\n\n" + _facts(state)
         ),
     ]
 

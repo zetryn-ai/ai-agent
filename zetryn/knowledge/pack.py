@@ -64,9 +64,7 @@ class KnowledgePack:
                 try:
                     data[jf.stem] = json.loads(jf.read_text(encoding="utf-8"))
                 except json.JSONDecodeError as exc:
-                    raise KnowledgePackError(
-                        f"invalid JSON in {jf}: {exc}"
-                    ) from exc
+                    raise KnowledgePackError(f"invalid JSON in {jf}: {exc}") from exc
 
         return cls(blocks=blocks, data=data)
 
